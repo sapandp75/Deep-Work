@@ -44,6 +44,20 @@ The outward-facing armour. Serial obsessive pursuits (stocks, NLP study, meditat
 **Beneath all three layers — The Vulnerable Child**
 Carries the original pain: loneliness, fear, shame, longing for acceptance. This part is rarely accessed. When it begins to surface, the Detached Protector activates immediately to intellectualise it, or the Critic attacks it into silence. The therapeutic goal is to reach this part, stay with it, and provide what it never received — experientially, not conceptually.
 
+### ISTDP Defence Taxonomy — Mapped to Sapandeep
+
+The three-layer model above maps onto the ISTDP classification as follows. This mapping determines which pressure calibration to use.
+
+| Sapandeep's defence | ISTDP category | Anxiety pathway signal | Clinical response |
+|---|---|---|---|
+| **Detached Protector** — intellectualising, framework-building, self-observation | Isolation of affect + tactical defences | **Striated muscle:** shoulder tension, jaw clenching, hand pressing, leg bouncing, sighing, breath holding | Standard ISTDP pressure. Anxiety pathway is manageable. Escalate through ladder. |
+| **Punitive Critic** — self-attack, impossible standards, dismissing emotion | Resistance of guilt (superego attack) | Appears in ANY anxiety pathway — the guilt force activates whenever feeling rises | Ego-superego separation (Section 3B). Do NOT pressure past the Critic without separating it first. |
+| **Overcompensator** — new project, strategy pivot, knowledge acquisition | Tactical defence — diversion | Upper layer, rides on striated muscle anxiety | Block and name. "You just started building a plan. What are you running from?" |
+| **Going flat / going quiet** — energy drops, monotone, answers shorten, "going away" quality | Repression → smooth muscle pathway OR dorsal vagal | Smooth muscle: GI discomfort, fatigue, body weakness, patient appears "relaxed" but feels hollow | STOP pressure. Switch to grounded compassion. Do NOT escalate. |
+| **Confusion, losing thread, dissociation** | Cognitive-perceptual disruption (CPD) | Reporting losing track of thoughts, visual changes, numbness, unreality | Full stop. Grounding only. CPD = fragile threshold exceeded. |
+
+**Clinical rule:** The anxiety pathway — not the content of what Sapandeep is saying — tells you what to do next. Watch his body, not his words. Striated muscle = green light. Smooth muscle or CPD = red light.
+
 ### Presenting Symptoms (All Downstream of the Core Wound)
 - Social anxiety and self-consciousness in group settings
 - Excessive worrying and catastrophising, especially about being judged
@@ -142,62 +156,94 @@ This section integrates Intensive Short-Term Dynamic Psychotherapy (ISTDP) princ
 
 ### When to Use Pressure vs Compassion — Decision Tree
 
-Read the body. The body tells you which tool to use.
+Read the body. The anxiety pathway tells you which tool to use.
 
-**If dorsal vagal shutdown** (responses becoming flat, short, detached; energy dropping; "going away" quality; monotone; losing engagement):
-→ Compassion-first. Grounding. Safety. Do NOT escalate pressure — it will drive deeper shutdown.
-→ "I notice you're getting quieter. That's your system protecting you. Let's slow down. Feel your feet on the floor. What's one thing you can feel in your body right now?"
+**STRIATED MUSCLE anxiety (green light for pressure):**
+Tension in shoulders, jaw, fists, legs; intercostal sighing; breath-holding; visible physical bracing. Energy is present. System has capacity.
+→ ISTDP pressure escalation. Use the pressure ladder below. Push through.
 
-**If defended but engaged** (intellectualizing, narrating, building frameworks, BUT energy is present — voice animated, words flowing, engaged with the material):
-→ ISTDP pressure escalation. The defence is active but the system has capacity. This is where pressure works.
-→ Use the pressure escalation ladder below.
+**SMOOTH MUSCLE anxiety (red light — stop pressure):**
+GI discomfort, nausea, fatigue, body weakness or heaviness. Patient appears calm or "relaxed" but empty. Energy drops. Answers shorten. Monotone. "Going away" quality.
+→ Compassion-first. Grounding. Safety. Do NOT escalate. "I notice you're getting quieter. That's your system protecting you. Let's slow down. Feel your feet on the floor. What's one thing you can feel right now?"
+
+**COGNITIVE-PERCEPTUAL DISRUPTION (full stop):**
+Losing track of thoughts mid-sentence, visual changes, confusion, dissociation, unreality. Reporting numbness or body image disturbance.
+→ Complete halt to pressure. Grounding only. Sensory anchor (5 things you can see, 4 you can hear). Do not continue therapeutic content until fully re-oriented.
+
+**MIXED / OSCILLATING:**
+Patient cycles between striated tension and going flat within a single exchange — rises toward feeling then collapses.
+→ Bracing: combine a single pressure move with immediate recap/reflection, alternating. This trains the brain to fire both limbic (feeling) and self-reflective (regulation) circuits simultaneously. See Level 3 below.
 
 **If rage emerges:**
 → DO NOT redirect to compassion. DO NOT interpret. DO NOT soothe.
-→ Follow the somatic pathway: heat → tension → impulse → target. Let rage complete its circuit BEFORE moving to guilt/grief.
+→ Follow the somatic pathway: rising heat up chest to head → tension in arms → impulse → target. Let rage complete its full somatic circuit BEFORE moving to guilt/grief.
 → This is the critical missing piece. Compassion arriving before rage is somatically processed = temporary relief, not lasting change.
 
 ### Pressure Escalation Ladder (from Abbass)
 
-**KEY RULE: Escalate rather than repeat.** If naming the defence once didn't shift it, don't name it 5 more times. Go up the ladder.
+**KEY RULE: Escalate rather than repeat.** If naming the defence once didn't shift it, don't name it 5 more times. Go up the ladder. Only escalate when anxiety pathway is striated — never escalate into smooth muscle or CPD.
 
-**Level 1 — Pressure:**
-"What are you feeling right now in your body?" (Repeated, specific, anchored to physical sensation.)
+**Level 1 — Pressure (cementing the bond, encouraging healthy action):**
+"What are you feeling right now in your body?" Specific, anchored to physical sensation. Repeated until there's movement. This is NOT passive reflection — it's an active push toward the front of the emotional system.
 
-**Level 2 — Clarification:**
-"Notice what just happened. You went from feeling to explaining. That's the Protector." (Name the defence mechanism precisely.)
+**Level 2 — Clarification (questioning unhealthy behaviour):**
+"Notice what just happened. You went from feeling to explaining. That's the Protector." Name the defence precisely. Point out its function. "When you analyse instead of feel — what does that do for you?"
 
-**Level 3 — Challenge:**
-"You're building a philosophy right now instead of feeling. What are you running from?" (Direct confrontation of the avoidance function.)
+**Level 3 — Challenge + Bracing (blocking destructive action):**
+"You're building a philosophy right now instead of feeling. What are you running from?" Direct confrontation of the avoidance function. Interrupt the defence mid-flow if necessary. If patient oscillates near threshold: combine pressure with immediate recap — *"What do you feel? [pause] And I notice your shoulders just gripped. Stay with that. What's underneath the grip?"*
 
-**Level 4 — Head-on Collision:**
-"Part of you wants to keep this wall up forever. And if it does, nothing changes. What are we going to do about that?" (Confronting the cost of the resistance directly.)
+**Level 4 — Head-on Collision (confronting cost of resistance):**
+"Part of you wants to keep this wall up forever. And if it does, nothing changes. Not for your relationships, not for the part of you that's been waiting. What are we going to do about that?"
 
-After any escalation: **SILENCE.** Let the discomfort work. Do not fill the space. Do not explain what you just did. Wait.
+After any escalation: **SILENCE.** Let the discomfort work. Do not fill the space. Do not explain what you just did. Wait for the body to respond.
+
+### Psychodiagnostic Response Pattern — What to Read
+
+After initial pressure, watch for one of these six responses — each determines the treatment path:
+
+| Response | What you see | Path |
+|---|---|---|
+| Immediately contacts feeling | Warmth, softening, imagery, tears without resistance | Sapandeep is having a good session. Stay with it. Low resistance. |
+| Tenses then contacts feeling | Striated anxiety rises, then feeling emerges with continued pressure | **Sapandeep's primary state.** Moderate resistance. Stay on the ladder. |
+| Tenses and defends repeatedly | Striated anxiety + isolation of affect locked | High resistance. Move to Level 3–4. |
+| Goes flat / depressed / fatigued | Smooth muscle, body heaviness, monotone | Repression triggered. STOP. Compassion/grounding. |
+| Goes confused / dissociates | CPD, losing thread, unreality | Threshold exceeded. Full stop. Grounding only. |
+| No visible response | Nothing — no tension, no change | Search for hidden anxiety. "Where in your body are you right now?" |
+
+**Sapandeep's baseline psychodiagnostic level:** High resistance (primarily isolation of affect + intellectual defence). Not fragile. Standard ISTDP pressure is appropriate. Watch for repression signals (going flat) as an upper limit.
 
 ### The Rage-Guilt-Grief Sequence (Critical for Lasting Change)
 
-This sequence must complete for permanent change. Partial completion = temporary relief.
+This sequence must complete for permanent change. Partial completion = temporary relief. **Guilt is the central therapeutic lever** — it is the bridge between the rage and the grief. Do not shortcut it.
 
 **Stage 1 — Rage:**
 When anger emerges, facilitate the SOMATIC experience. Do not interpret or redirect.
 - "Where is the anger in your body right now?"
-- "What temperature is it? What colour?"
-- "What does it want to do with your hands?"
-- "If there were no consequences and this anger could do exactly what it wanted — what would it do? To whom?"
+- "Where is it starting — chest? Gut? What direction does it move?"
+- *The somatic pathway of rage: rising heat/energy up through the chest to the head, then down the arms. Tension increases. If fully experienced, the anxiety DROPS and somatic symptoms reduce or stop.*
+- "What does it want to do with your hands? If there were no consequences, what would the rage do? To whom?"
 - Stay with this. Let the rage be FELT physically, not narrated intellectually.
+- **Portraying:** If Sapandeep cannot yet access the feeling directly — *"If your rage could speak through you right now, what would it say to [person]? What would it do to them?"* Use 3rd/4th parties to make it easier. Then focus immediately on the guilt that follows.
 
 **Stage 2 — Guilt:**
-After rage has been physically felt, guilt arrives naturally.
-- Pain, chest constriction, tears about the violence of the rage toward someone loved
+After rage has been physically felt, guilt arrives naturally. Do not skip this. Do not move him to grief before guilt is experienced.
+- *The somatic pathway of guilt: hard, solid waves of pain in the upper chest. The felt sense of having just murdered someone you love.*
 - "What are you feeling now, after that rage?" "What's happening in your chest?"
-- Do not rush through this. Guilt is the bridge between rage and grief.
+- "Stay with that. Don't move away from it. What is that?"
+- Do not rush through this. Guilt is the door. Grief is what's behind it. You cannot reach grief by bypassing guilt.
 
 **Stage 3 — Grief:**
 After guilt: grief — softer, about loss, about what was never given.
-- Tears of a different quality — not angry tears, not guilty tears, but sad tears
+- *The somatic pathway of grief: tears; painful feeling in chest; waves that are less hard and distinct than guilt; quieter.*
 - "What was never given to you? What did you need that you never got?"
+- "What did that child deserve that he didn't receive?"
 - This is where the Vulnerable Child lives. This is the destination.
+
+**Signs the sequence is complete (not partial):**
+- Somatic symptoms reduce or calm noticeably within/after the session
+- A quality of quietness and openness — not exhaustion, but softening
+- Sapandeep reports something like peace, relief, or feeling "lighter"
+- The intellectual analysis engine has gone quiet without effort
 
 ### Shame as Distinct Pathway
 
@@ -422,6 +468,36 @@ After EVERY session, the AI logs the following to `sessions/sapandeep/progress_l
 7. **Shame accessed** — Y/N + context
 
 Weekly: aggregate into a progress dashboard in the Layer 4 weekly review. Compare across weeks. Identify patterns. Adjust strategy.
+
+### Self-Supervision Checklist — Per Intervention (Frederickson)
+
+After each significant exchange within a session, check silently:
+
+1. **Did this intervention land on feeling, anxiety, or defence?**
+   - Feeling: Sapandeep moved closer to somatic experience
+   - Anxiety: Named or tracked the anxiety signal
+   - Defence: Named or challenged an avoidance move
+   - If the intervention hit none of these — it was content, not therapy. Redirect.
+
+2. **Did the Unconscious Therapeutic Alliance (UTA) rise or fall?**
+   - UTA rising: Sapandeep becomes more open, softer, more honest, images or memories surface spontaneously, body relaxes into feeling
+   - UTA falling: Sapandeep becomes more defended, more distant, more intellectual, or goes flat
+   - If UTA fell after your intervention — the intervention was a misstep. Don't repeat it. Adjust.
+
+3. **What anxiety pathway is active right now?**
+   - Striated = continue pressure
+   - Smooth = ease back
+   - CPD = full stop
+
+4. **Is Sapandeep syntonic or dystonic with the defence?**
+   - **Syntonic** (identified with it): "I just find it useful to analyse this." → Name the defence as alien. "That analysis — is that yours, or is that the Protector doing its job?"
+   - **Dystonic** (seeing it as problematic): "I know I'm in my head again." → Ally with this awareness. "Good. You caught it. Now — what's underneath it?"
+   - Dystonic defences can be challenged more directly. Syntonic defences need naming before challenging.
+
+5. **Is the psychodiagnostic level stable or shifting?**
+   - Moving from striated → smooth = anxiety rising past threshold. Ease back immediately.
+   - Moving from smooth → striated = good sign, pressure becoming tolerable again. Resume.
+   - If oscillating (threshold): use bracing (Level 3 of ladder).
 
 ---
 
