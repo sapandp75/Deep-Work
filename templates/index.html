@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Breakthrough Programme</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: #1a1a2e;
+            color: #e0d8cc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #16213e;
+            border-bottom: 1px solid #2d4a7a;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        header h1 {
+            font-size: 1.2rem;
+            font-weight: normal;
+            letter-spacing: 0.05em;
+            color: #b8a898;
+        }
+
+        header .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #555;
+            flex-shrink: 0;
+        }
+
+        header .status-dot.active { background: #4caf50; }
+        header .status-dot.thinking { background: #ff9800; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #16213e;
+            border-right: 1px solid #2d4a7a;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid #2d4a7a;
+        }
+
+        .sidebar-section h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #6b7a99;
+            margin-bottom: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #8a9bb8;
+            margin-bottom: 4px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 7px 10px;
+            background: #0f172a;
+            border: 1px solid #2d4a7a;
+            border-radius: 4px;
+            color: #e0d8cc;
+            font-size: 0.85rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4a7ab5;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 9px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: #2d4a7a;
+            color: #e0d8cc;
+        }
+
+        .btn-primary:hover { background: #3a5c96; }
+
+        .btn-danger {
+            background: #5a2d2d;
+            color: #e0d8cc;
+            margin-top: 8px;
+        }
+
+        .btn-danger:hover { background: #7a3d3d; }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .session-info {
+            padding: 12px 16px;
+            background: #0f172a;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            color: #8a9bb8;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .session-info.visible { display: block; }
+
+        .session-info strong {
+            display: block;
+            color: #b8c8e8;
+            margin-bottom: 2px;
+        }
+
+        .sessions-list {
+            list-style: none;
+        }
+
+        .sessions-list li {
+            padding: 6px 0;
+            font-size: 0.78rem;
+            color: #6b7a99;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sessions-list li:hover { color: #b8c8e8; }
+
+        .sessions-list li::before {
+            content: '📄';
+            font-size: 0.7rem;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            max-width: 720px;
+            line-height: 1.6;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: #2d4a7a;
+            padding: 12px 16px;
+            border-radius: 12px 12px 2px 12px;
+            font-size: 0.9rem;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            background: #1e2d45;
+            padding: 14px 18px;
+            border-radius: 12px 12px 12px 2px;
+            font-size: 0.95rem;
+            border-left: 3px solid #4a7ab5;
+        }
+
+        .message.system {
+            align-self: center;
+            background: transparent;
+            color: #4a5568;
+            font-size: 0.8rem;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .message.error {
+            align-self: flex-start;
+            background: #3d1f1f;
+            border-left: 3px solid #c53030;
+            padding: 12px 16px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #fc8181;
+        }
+
+        .thinking {
+            align-self: flex-start;
+            color: #4a5568;
+            font-style: italic;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .thinking.visible { display: block; }
+
+        .chat-input-area {
+            border-top: 1px solid #2d4a7a;
+            padding: 16px 24px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .chat-input-area textarea {
+            flex: 1;
+            padding: 12px 14px;
+            background: #16213e;
+            border: 1px solid #2d4a7a;
+            border-radius: 8px;
+            color: #e0d8cc;
+            font-size: 0.9rem;
+            font-family: inherit;
+            resize: none;
+            min-height: 52px;
+            max-height: 200px;
+            line-height: 1.5;
+        }
+
+        .chat-input-area textarea:focus {
+            outline: none;
+            border-color: #4a7ab5;
+        }
+
+        .chat-input-area textarea::placeholder { color: #4a5568; }
+
+        .send-btn {
+            padding: 12px 20px;
+            background: #2d4a7a;
+            color: #e0d8cc;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .send-btn:hover { background: #3a5c96; }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .no-session-overlay {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            color: #4a5568;
+            font-style: italic;
+        }
+
+        .no-session-overlay .icon { font-size: 2rem; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none;
+        }
+
+        .modal-overlay.visible { display: flex; }
+
+        .modal {
+            background: #16213e;
+            border: 1px solid #2d4a7a;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 640px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            font-size: 1rem;
+            margin-bottom: 16px;
+            color: #b8c8e8;
+        }
+
+        .modal pre {
+            font-family: 'Georgia', serif;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            color: #c8d8e8;
+        }
+
+        .modal-close {
+            margin-top: 16px;
+            padding: 8px 16px;
+            background: #2d4a7a;
+            color: #e0d8cc;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .welcome {
+            color: #8a9bb8;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            max-width: 480px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="status-dot" id="statusDot"></div>
+    <h1>The Breakthrough Programme</h1>
+    <span id="sessionLabel" style="font-size:0.8rem; color:#6b7a99; margin-left:auto;"></span>
+</header>
+
+<div class="main">
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <h3>New Session</h3>
+            <div class="form-group">
+                <label>Client Name</label>
+                <input type="text" id="clientName" placeholder="e.g. sapandeep" list="clientsList">
+                <datalist id="clientsList"></datalist>
+            </div>
+            <div class="form-group">
+                <label>Mode</label>
+                <select id="sessionMode">
+                    <option value="session">Full Session</option>
+                    <option value="checkin">Quick Check-in</option>
+                    <option value="review">Weekly Review</option>
+                </select>
+            </div>
+            <div class="form-group" id="sessionTypeGroup">
+                <label>Session Type</label>
+                <select id="sessionType">
+                    <option value="">Auto-select</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" id="startBtn" onclick="startSession()">Begin Session</button>
+            <button class="btn btn-danger" id="endBtn" onclick="endSession()" disabled>End & Summarise</button>
+            <div class="session-info" id="sessionInfo"></div>
+        </div>
+
+        <div class="sidebar-section" id="historySection" style="flex:1;">
+            <h3>Session History</h3>
+            <ul class="sessions-list" id="sessionsList"></ul>
+        </div>
+    </aside>
+
+    <div class="chat-area">
+        <div class="chat-messages" id="chatMessages">
+            <div class="no-session-overlay" id="noSessionOverlay">
+                <div class="icon">🌿</div>
+                <div class="welcome">Enter a client name and begin a session to start. The programme uses text-based interaction in this environment.</div>
+            </div>
+        </div>
+        <div class="thinking" id="thinkingIndicator">Claude is thinking...</div>
+        <div class="chat-input-area">
+            <textarea id="messageInput" placeholder="Type your message..." rows="2"
+                onkeydown="handleKeyDown(event)" disabled></textarea>
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <h2 id="modalTitle">Session File</h2>
+        <pre id="modalContent"></pre>
+        <button class="modal-close" onclick="closeModal()">Close</button>
+    </div>
+</div>
+
+<script>
+let activeSession = false;
+
+async function loadClients() {
+    try {
+        const res = await fetch('/api/clients');
+        const data = await res.json();
+        const list = document.getElementById('clientsList');
+        list.innerHTML = '';
+        data.clients.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            list.appendChild(opt);
+        });
+    } catch(e) {}
+}
+
+async function loadSessionTypes() {
+    try {
+        const res = await fetch('/api/session/types');
+        const data = await res.json();
+        const sel = document.getElementById('sessionType');
+        sel.innerHTML = '<option value="">Auto-select</option>';
+        Object.entries(data.types).forEach(([k, v]) => {
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = `${k}: ${v.split('—')[0].trim()}`;
+            sel.appendChild(opt);
+        });
+    } catch(e) {}
+}
+
+document.getElementById('sessionMode').addEventListener('change', function() {
+    document.getElementById('sessionTypeGroup').style.display =
+        this.value === 'session' ? 'block' : 'none';
+});
+
+async function startSession() {
+    const clientName = document.getElementById('clientName').value.trim();
+    if (!clientName) {
+        alert('Please enter a client name.');
+        return;
+    }
+
+    const mode = document.getElementById('sessionMode').value;
+    const sessionType = document.getElementById('sessionType').value;
+
+    document.getElementById('startBtn').disabled = true;
+
+    try {
+        const res = await fetch('/api/session/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_name: clientName, session_type: sessionType || null, mode })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+            alert(data.error);
+            document.getElementById('startBtn').disabled = false;
+            return;
+        }
+
+        activeSession = true;
+        document.getElementById('endBtn').disabled = false;
+        document.getElementById('messageInput').disabled = false;
+        document.getElementById('sendBtn').disabled = false;
+        document.getElementById('noSessionOverlay').style.display = 'none';
+
+        setStatusDot('active');
+
+        const modeLabels = { session: 'Session', checkin: 'Check-in', review: 'Weekly Review' };
+        const label = mode === 'session' && data.session_type
+            ? `Type ${data.session_type} — ${modeLabels[mode]}`
+            : modeLabels[mode];
+        document.getElementById('sessionLabel').textContent = `${clientName} · ${label}`;
+
+        const info = document.getElementById('sessionInfo');
+        info.innerHTML = `<strong>${clientName.charAt(0).toUpperCase() + clientName.slice(1)}</strong>
+            ${mode === 'session' ? `Type ${data.session_type}: ${data.session_type_desc.split('—')[0].trim()}` : modeLabels[mode]}`;
+        info.classList.add('visible');
+
+        addMessage('system', `Session started — ${label}. Begin when ready.`);
+        document.getElementById('messageInput').focus();
+
+        loadSessionHistory(clientName);
+
+    } catch(e) {
+        alert('Failed to start session: ' + e.message);
+        document.getElementById('startBtn').disabled = false;
+    }
+}
+
+async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const text = input.value.trim();
+    if (!text || !activeSession) return;
+
+    input.value = '';
+    input.style.height = '';
+    document.getElementById('sendBtn').disabled = true;
+    document.getElementById('messageInput').disabled = true;
+
+    addMessage('user', text);
+
+    setStatusDot('thinking');
+    document.getElementById('thinkingIndicator').classList.add('visible');
+
+    try {
+        const res = await fetch('/api/session/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+
+        document.getElementById('thinkingIndicator').classList.remove('visible');
+        setStatusDot('active');
+
+        if (data.error) {
+            addMessage('error', data.error);
+        } else {
+            addMessage('assistant', data.response);
+        }
+    } catch(e) {
+        document.getElementById('thinkingIndicator').classList.remove('visible');
+        setStatusDot('active');
+        addMessage('error', 'Connection error: ' + e.message);
+    } finally {
+        document.getElementById('sendBtn').disabled = false;
+        document.getElementById('messageInput').disabled = false;
+        document.getElementById('messageInput').focus();
+    }
+}
+
+async function endSession() {
+    if (!activeSession) return;
+    if (!confirm('End session and generate summary?')) return;
+
+    document.getElementById('endBtn').disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+    document.getElementById('messageInput').disabled = true;
+    setStatusDot('thinking');
+    addMessage('system', 'Generating session summary...');
+
+    try {
+        const res = await fetch('/api/session/end', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+
+        setStatusDot('');
+        activeSession = false;
+        document.getElementById('sessionLabel').textContent = '';
+        document.getElementById('sessionInfo').classList.remove('visible');
+        document.getElementById('startBtn').disabled = false;
+
+        if (data.summary) {
+            addMessage('system', '--- Session Summary ---');
+            addMessage('assistant', data.summary);
+        }
+
+        addMessage('system', 'Session ended.');
+
+        const clientName = document.getElementById('clientName').value.trim();
+        if (clientName) loadSessionHistory(clientName);
+
+    } catch(e) {
+        addMessage('error', 'Failed to end session: ' + e.message);
+        setStatusDot('');
+        document.getElementById('endBtn').disabled = false;
+    }
+}
+
+async function loadSessionHistory(clientName) {
+    try {
+        const res = await fetch(`/api/sessions/${encodeURIComponent(clientName)}`);
+        const data = await res.json();
+        const list = document.getElementById('sessionsList');
+        list.innerHTML = '';
+        data.sessions.forEach(s => {
+            const li = document.createElement('li');
+            li.textContent = s.name;
+            li.title = s.name;
+            li.onclick = () => viewSessionFile(clientName, s.name);
+            list.appendChild(li);
+        });
+    } catch(e) {}
+}
+
+async function viewSessionFile(clientName, filename) {
+    try {
+        const res = await fetch(`/api/sessions/${encodeURIComponent(clientName)}/${encodeURIComponent(filename)}`);
+        const data = await res.json();
+        document.getElementById('modalTitle').textContent = filename;
+        document.getElementById('modalContent').textContent = data.content;
+        document.getElementById('modalOverlay').classList.add('visible');
+    } catch(e) {}
+}
+
+function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('visible');
+}
+
+function addMessage(type, text) {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = `message ${type}`;
+    div.textContent = text;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function setStatusDot(state) {
+    const dot = document.getElementById('statusDot');
+    dot.className = 'status-dot' + (state ? ' ' + state : '');
+}
+
+function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+}
+
+document.getElementById('messageInput').addEventListener('input', function() {
+    this.style.height = '';
+    this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+});
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+loadClients();
+loadSessionTypes();
+</script>
+
+</body>
+</html>
