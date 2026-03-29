@@ -8,7 +8,9 @@
       "Bash(git restore:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(find /home/runner -iname *meta* -o -iname *CLAUDE*)"
+      "Bash(find /home/runner -iname *meta* -o -iname *CLAUDE*)",
+      "Bash(find /home/runner/.claude -name *.md)",
+      "Bash(uv add:*)"
     ]
   }
 }
