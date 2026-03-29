@@ -39,7 +39,7 @@ def load_all_session_summaries(client_name):
     if not client_dir.exists():
         return ""
 
-    session_files = sorted(client_dir.glob("*_session_*.md"))
+    session_files = sorted(client_dir.glob("*_session_*.md"))[-5:]
     summaries = []
 
     for f in session_files:

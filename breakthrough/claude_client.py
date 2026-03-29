@@ -1,5 +1,6 @@
 """
 Groq API client for the Breakthrough Programme web interface.
+Falls back to Gemini if Groq rate-limits or fails.
 """
 
 import os
@@ -7,60 +8,89 @@ from groq import Groq
 from groq import AuthenticationError, RateLimitError
 
 MAX_CONTEXT_EXCHANGES = 15
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "llama-3.1-8b-instant"
+
+
+def _clean_text(text):
+    """Strip markdown formatting from AI response."""
+    text = text.replace("**", "").replace("*", "")
+    text = text.replace("##", "").replace("#", "")
+    text = text.replace("- ", "").replace("• ", "")
+    return text.strip()
+
+
+def _gemini_chat(system_prompt, messages, user_message):
+    """
+    Call Google Gemini as fallback.
+    Returns (response_text, error_message).
+    """
+    api_key = os.environ.get("Gemini_API_SB")
+    if not api_key:
+        return None, "Gemini_API_SB not set."
+
+    try:
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=api_key)
+
+        contents = []
+        for msg in messages:
+            role = "user" if msg["role"] == "user" else "model"
+            contents.append(types.Content(role=role, parts=[types.Part(text=msg["content"])]))
+        contents.append(types.Content(role="user", parts=[types.Part(text=user_message)]))
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=contents,
+            config=types.GenerateContentConfig(system_instruction=system_prompt, max_output_tokens=1024),
+        )
+        return _clean_text(response.text), None
+
+    except Exception as e:
+        return None, f"Gemini error: {str(e)}"
 
 
 def get_claude_response(system_prompt, conversation, user_message):
     """
-    Send message to Groq API.
+    Send message to Groq API, falling back to Gemini on rate limit or auth error.
     Returns (response_text, error_message).
     """
     api_key = os.environ.get("Groq_SB")
-    if not api_key:
-        return None, "Groq_SB is not set. Please add it in the Secrets tab."
+    recent = conversation[-(MAX_CONTEXT_EXCHANGES * 2):]
 
-    try:
-        client = Groq(api_key=api_key)
+    if api_key:
+        try:
+            client = Groq(api_key=api_key)
+            messages = [{"role": "system", "content": system_prompt}]
+            for msg in recent:
+                messages.append({"role": msg["role"], "content": msg["content"]})
+            messages.append({"role": "user", "content": user_message})
 
-        messages = [{"role": "system", "content": system_prompt}]
-        recent = conversation[-(MAX_CONTEXT_EXCHANGES * 2):]
-        for msg in recent:
-            messages.append({"role": msg["role"], "content": msg["content"]})
-        messages.append({"role": "user", "content": user_message})
+            response = client.chat.completions.create(
+                model=MODEL,
+                max_tokens=1024,
+                messages=messages,
+            )
+            return _clean_text(response.choices[0].message.content), None
 
-        response = client.chat.completions.create(
-            model=MODEL,
-            max_tokens=1024,
-            messages=messages,
-        )
+        except (AuthenticationError, RateLimitError):
+            # Fall through to Gemini
+            pass
+        except Exception as e:
+            # Fall through to Gemini for any other Groq error
+            pass
 
-        text = response.choices[0].message.content.strip()
-
-        # Clean any markdown formatting
-        text = text.replace("**", "").replace("*", "")
-        text = text.replace("##", "").replace("#", "")
-        text = text.replace("- ", "").replace("• ", "")
-
-        return text, None
-
-    except AuthenticationError:
-        return None, "Invalid Groq_SB key. Please check your API key in the Secrets tab."
-    except RateLimitError:
-        return None, "Rate limit reached. Please wait a moment and try again."
-    except Exception as e:
-        return None, f"API error: {str(e)}"
+    # Gemini fallback
+    return _gemini_chat(system_prompt, recent, user_message)
 
 
 def generate_summary(client_name, session_type, conversation, system_prompt):
     """
-    Generate a session summary using Groq.
+    Generate a session summary. Tries Groq first, falls back to Gemini.
     Returns (summary_text, error_message).
     """
     from .session_core import SESSION_TYPES
-
-    api_key = os.environ.get("Groq_SB")
-    if not api_key:
-        return None, "Groq_SB is not set."
 
     transcript = "\n".join(
         f"{'Client' if m['role'] == 'user' else 'Therapist'}: {m['content']}"
@@ -90,14 +120,34 @@ Generate a concise session summary with these sections:
 
 Be honest. If no felt shift occurred, say so. The body is the scoreboard."""
 
+    api_key = os.environ.get("Groq_SB")
+    if api_key:
+        try:
+            client = Groq(api_key=api_key)
+            response = client.chat.completions.create(
+                model=MODEL,
+                max_tokens=2048,
+                messages=[{"role": "user", "content": summary_prompt}],
+            )
+            return response.choices[0].message.content.strip(), None
+        except (AuthenticationError, RateLimitError):
+            pass
+        except Exception:
+            pass
+
+    # Gemini fallback for summary
     try:
-        client = Groq(api_key=api_key)
-        response = client.chat.completions.create(
-            model=MODEL,
-            max_tokens=2048,
-            messages=[{"role": "user", "content": summary_prompt}],
+        from google import genai
+        from google.genai import types
+        gemini_key = os.environ.get("Gemini_API_SB")
+        if not gemini_key:
+            return None, "Both Groq and Gemini APIs unavailable."
+        client = genai.Client(api_key=gemini_key)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=summary_prompt,
+            config=types.GenerateContentConfig(max_output_tokens=2048),
         )
-        summary = response.choices[0].message.content.strip()
-        return summary, None
+        return response.text.strip(), None
     except Exception as e:
-        return None, str(e)
+        return None, f"Summary failed: {str(e)}"

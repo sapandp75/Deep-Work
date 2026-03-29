@@ -3,666 +3,1430 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Breakthrough Programme</title>
+    <title>Breakthrough</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:         #0b0d14;
+            --surface:    #111520;
+            --surface2:   #181e2e;
+            --surface3:   #1e2640;
+            --border:     #252d42;
+            --border2:    #2e3a58;
+            --accent:     #5b8fd4;
+            --accent2:    #7aaae8;
+            --text:       #dde4ef;
+            --text-soft:  #8a9ab8;
+            --text-dim:   #445070;
+            --user-bg:    #1e3a6e;
+            --user-border:#2d5299;
+            --ai-bg:      #111826;
+            --ai-border:  #5b8fd4;
+            --danger:     #c0392b;
+            --success-bg: #0d2e1e;
+            --success:    #2ecc71;
+            --warn:       #e67e22;
+            --radius:     14px;
+            --sidebar-w:  280px;
+        }
+
+        html, body { height: 100%; }
 
         body {
-            font-family: 'Georgia', serif;
-            background: #1a1a2e;
-            color: #e0d8cc;
-            min-height: 100vh;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             display: flex;
             flex-direction: column;
-        }
-
-        header {
-            background: #16213e;
-            border-bottom: 1px solid #2d4a7a;
-            padding: 16px 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        header h1 {
-            font-size: 1.2rem;
-            font-weight: normal;
-            letter-spacing: 0.05em;
-            color: #b8a898;
-        }
-
-        header .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #555;
-            flex-shrink: 0;
-        }
-
-        header .status-dot.active { background: #4caf50; }
-        header .status-dot.thinking { background: #ff9800; animation: pulse 1s infinite; }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        .main {
-            display: flex;
-            flex: 1;
+            height: 100vh;
             overflow: hidden;
-        }
-
-        .sidebar {
-            width: 260px;
-            background: #16213e;
-            border-right: 1px solid #2d4a7a;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        .sidebar-section {
-            padding: 16px;
-            border-bottom: 1px solid #2d4a7a;
-        }
-
-        .sidebar-section h3 {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: #6b7a99;
-            margin-bottom: 12px;
-        }
-
-        .form-group {
-            margin-bottom: 10px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.8rem;
-            color: #8a9bb8;
-            margin-bottom: 4px;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 7px 10px;
-            background: #0f172a;
-            border: 1px solid #2d4a7a;
-            border-radius: 4px;
-            color: #e0d8cc;
-            font-size: 0.85rem;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #4a7ab5;
-        }
-
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 9px 16px;
-            border: none;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: inherit;
-        }
-
-        .btn-primary {
-            background: #2d4a7a;
-            color: #e0d8cc;
-        }
-
-        .btn-primary:hover { background: #3a5c96; }
-
-        .btn-danger {
-            background: #5a2d2d;
-            color: #e0d8cc;
-            margin-top: 8px;
-        }
-
-        .btn-danger:hover { background: #7a3d3d; }
-
-        .btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .session-info {
-            padding: 12px 16px;
-            background: #0f172a;
-            border-radius: 4px;
-            font-size: 0.78rem;
-            color: #8a9bb8;
-            margin-top: 8px;
-            display: none;
-        }
-
-        .session-info.visible { display: block; }
-
-        .session-info strong {
-            display: block;
-            color: #b8c8e8;
-            margin-bottom: 2px;
-        }
-
-        .sessions-list {
-            list-style: none;
-        }
-
-        .sessions-list li {
-            padding: 6px 0;
-            font-size: 0.78rem;
-            color: #6b7a99;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .sessions-list li:hover { color: #b8c8e8; }
-
-        .sessions-list li::before {
-            content: '📄';
-            font-size: 0.7rem;
-        }
-
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .message {
-            max-width: 720px;
-            line-height: 1.6;
-        }
-
-        .message.user {
-            align-self: flex-end;
-            background: #2d4a7a;
-            padding: 12px 16px;
-            border-radius: 12px 12px 2px 12px;
-            font-size: 0.9rem;
-        }
-
-        .message.assistant {
-            align-self: flex-start;
-            background: #1e2d45;
-            padding: 14px 18px;
-            border-radius: 12px 12px 12px 2px;
-            font-size: 0.95rem;
-            border-left: 3px solid #4a7ab5;
-        }
-
-        .message.system {
-            align-self: center;
-            background: transparent;
-            color: #4a5568;
-            font-size: 0.8rem;
-            font-style: italic;
-            text-align: center;
-        }
-
-        .message.error {
-            align-self: flex-start;
-            background: #3d1f1f;
-            border-left: 3px solid #c53030;
-            padding: 12px 16px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            color: #fc8181;
-        }
-
-        .thinking {
-            align-self: flex-start;
-            color: #4a5568;
-            font-style: italic;
-            font-size: 0.85rem;
-            display: none;
-        }
-
-        .thinking.visible { display: block; }
-
-        .chat-input-area {
-            border-top: 1px solid #2d4a7a;
-            padding: 16px 24px;
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-        }
-
-        .chat-input-area textarea {
-            flex: 1;
-            padding: 12px 14px;
-            background: #16213e;
-            border: 1px solid #2d4a7a;
-            border-radius: 8px;
-            color: #e0d8cc;
-            font-size: 0.9rem;
-            font-family: inherit;
-            resize: none;
-            min-height: 52px;
-            max-height: 200px;
+            font-size: 14px;
             line-height: 1.5;
         }
 
-        .chat-input-area textarea:focus {
-            outline: none;
-            border-color: #4a7ab5;
+        /* ── HEADER ─────────────────────────────────── */
+        .header {
+            height: 52px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 12px;
+            flex-shrink: 0;
+            z-index: 100;
         }
 
-        .chat-input-area textarea::placeholder { color: #4a5568; }
+        .header-logo {
+            font-family: 'Lora', serif;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #c8d8f0;
+            letter-spacing: 0.02em;
+        }
 
-        .send-btn {
-            padding: 12px 20px;
-            background: #2d4a7a;
-            color: #e0d8cc;
+        .header-sep { flex: 1; }
+
+        .session-pill {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface3);
+            border: 1px solid var(--border2);
+            border-radius: 20px;
+            padding: 5px 12px 5px 8px;
+            font-size: 0.72rem;
+            color: var(--text-soft);
+        }
+
+        .session-pill.visible { display: flex; }
+
+        .session-pill .type-badge {
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 10px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .type-A { background: #1a3a5c; color: #7ab4f0; border: 1px solid #2a5080; }
+        .type-B { background: #1a3a2a; color: #7af0b4; border: 1px solid #2a5040; }
+        .type-C { background: #3a1a3a; color: #d4a0f0; border: 1px solid #582080; }
+        .type-D { background: #3a2a1a; color: #f0c07a; border: 1px solid #805020; }
+        .type-E { background: #1a3a3a; color: #7af0f0; border: 1px solid #206080; }
+        .type-default { background: var(--surface3); color: var(--text-soft); border: 1px solid var(--border); }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--text-dim);
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .status-dot.active  { background: var(--success); box-shadow: 0 0 8px rgba(46,204,113,0.6); }
+        .status-dot.thinking { background: var(--warn); animation: breathe 1.4s ease-in-out infinite; }
+
+        @keyframes breathe { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.7); } }
+
+        .menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-soft);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            font-size: 1rem;
+            line-height: 1;
+        }
+        .menu-btn:hover { background: var(--surface2); color: var(--text); }
+
+        /* ── LAYOUT ─────────────────────────────────── */
+        .layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ── SIDEBAR ────────────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+        }
+
+        .sidebar-inner {
+            flex: 1;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border2) transparent;
+        }
+
+        .sidebar-inner::-webkit-scrollbar { width: 4px; }
+        .sidebar-inner::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+        .sidebar-block {
+            padding: 18px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-label {
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
+        .field { margin-bottom: 10px; }
+
+        .field label {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--text-soft);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            padding: 8px 11px;
+            background: var(--bg);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.82rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            appearance: none;
+        }
+
+        .field input:focus,
+        .field select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(91,143,212,0.15);
+        }
+
+        .field select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23445070'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+        }
+
+        .btn-row { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+
+        .btn {
+            width: 100%;
+            padding: 9px 14px;
             border: none;
             border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+            font-weight: 500;
             font-family: inherit;
-            transition: background 0.2s;
-            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.01em;
         }
 
-        .send-btn:hover { background: #3a5c96; }
-        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-start {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-start:hover:not(:disabled) { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91,143,212,0.3); }
 
-        .no-session-overlay {
+        .btn-end {
+            background: transparent;
+            color: #e87070;
+            border: 1px solid #5a2020;
+        }
+        .btn-end:hover:not(:disabled) { background: #2a1010; border-color: #8a3030; }
+
+        .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+        .active-card {
+            display: none;
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: var(--surface3);
+            border: 1px solid var(--border2);
+            border-radius: 10px;
+        }
+        .active-card.visible { display: block; }
+        .active-card-name {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+        .active-card-mode {
+            font-size: 0.72rem;
+            color: var(--text-soft);
+        }
+
+        /* HISTORY */
+        .hist-date {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin: 10px 0 4px;
+            padding: 0 2px;
+        }
+
+        .hist-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 0.76rem;
+            color: var(--text-soft);
+        }
+        .hist-item:hover { background: var(--surface2); color: var(--text); }
+
+        .hist-icon { font-size: 0.8rem; flex-shrink: 0; opacity: 0.8; }
+        .hist-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .hist-num { font-size: 0.65rem; color: var(--text-dim); flex-shrink: 0; }
+
+        /* ── CHAT ───────────────────────────────────── */
+        .chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            min-width: 0;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border2) transparent;
+        }
+
+        .messages::-webkit-scrollbar { width: 5px; }
+        .messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+        /* EMPTY STATE */
+        .empty-state {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
-            gap: 12px;
-            color: #4a5568;
-            font-style: italic;
+            gap: 24px;
+            text-align: center;
+            padding: 40px;
         }
 
-        .no-session-overlay .icon { font-size: 2rem; }
-
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
+        .empty-icon {
+            width: 64px; height: 64px;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 100;
-            display: none;
+            font-size: 1.8rem;
         }
 
-        .modal-overlay.visible { display: flex; }
-
-        .modal {
-            background: #16213e;
-            border: 1px solid #2d4a7a;
-            border-radius: 8px;
-            padding: 24px;
-            max-width: 640px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
+        .empty-title {
+            font-family: 'Lora', serif;
+            font-size: 1.3rem;
+            font-weight: 400;
+            color: #a0b4cc;
+            margin-bottom: 8px;
         }
 
-        .modal h2 {
-            font-size: 1rem;
-            margin-bottom: 16px;
-            color: #b8c8e8;
+        .empty-sub {
+            font-size: 0.82rem;
+            color: var(--text-dim);
+            max-width: 340px;
+            line-height: 1.7;
         }
 
-        .modal pre {
-            font-family: 'Georgia', serif;
-            font-size: 0.85rem;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            color: #c8d8e8;
+        /* MESSAGES */
+        .msg { max-width: 780px; animation: msgIn 0.25s ease; }
+
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        .modal-close {
-            margin-top: 16px;
-            padding: 8px 16px;
-            background: #2d4a7a;
-            color: #e0d8cc;
+        .msg.user { align-self: flex-end; }
+        .msg.assistant, .msg.error { align-self: flex-start; }
+        .msg.system { align-self: center; }
+
+        .msg-bubble {
+            padding: 13px 17px;
+            border-radius: var(--radius);
+            position: relative;
+        }
+
+        .msg.user .msg-bubble {
+            background: var(--user-bg);
+            border: 1px solid var(--user-border);
+            border-radius: var(--radius) var(--radius) 4px var(--radius);
+            font-size: 0.88rem;
+            color: #d8e8ff;
+        }
+
+        .msg.assistant .msg-bubble {
+            background: var(--ai-bg);
+            border: 1px solid var(--border2);
+            border-left: 3px solid var(--ai-border);
+            border-radius: 4px var(--radius) var(--radius) var(--radius);
+            font-size: 0.92rem;
+            font-family: 'Lora', serif;
+            line-height: 1.75;
+            color: var(--text);
+        }
+
+        .msg.error .msg-bubble {
+            background: #1a0a0a;
+            border: 1px solid #5a1a1a;
+            border-left: 3px solid var(--danger);
+            border-radius: 4px var(--radius) var(--radius) var(--radius);
+            font-size: 0.84rem;
+            color: #f08080;
+        }
+
+        .msg.system .msg-bubble {
+            background: transparent;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            font-style: italic;
+            padding: 4px 12px;
+        }
+
+        .msg-meta {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 5px;
+            padding: 0 2px;
+        }
+
+        .msg.assistant .msg-meta { justify-content: flex-start; }
+
+        .msg-time {
+            font-size: 0.62rem;
+            color: var(--text-dim);
+        }
+
+        .copy-btn {
+            font-size: 0.62rem;
+            color: var(--text-dim);
+            background: none;
             border: none;
-            border-radius: 4px;
             cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.15s, background 0.15s;
             font-family: inherit;
         }
 
-        .welcome {
-            color: #8a9bb8;
-            font-size: 0.85rem;
-            line-height: 1.6;
-            max-width: 480px;
+        .msg:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { background: var(--surface3); color: var(--text-soft); }
+
+        /* THINKING */
+        .thinking {
+            align-self: flex-start;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: var(--ai-bg);
+            border: 1px solid var(--border2);
+            border-left: 3px solid var(--ai-border);
+            border-radius: 4px var(--radius) var(--radius) var(--radius);
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            font-style: italic;
+            animation: msgIn 0.25s ease;
+        }
+        .thinking.visible { display: flex; }
+
+        .dots { display: flex; gap: 4px; align-items: center; }
+        .dots span {
+            width: 6px; height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: dotBounce 1.4s ease-in-out infinite;
+        }
+        .dots span:nth-child(2) { animation-delay: 0.2s; }
+        .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotBounce {
+            0%,60%,100% { transform: translateY(0); opacity:0.5; }
+            30% { transform: translateY(-6px); opacity:1; }
+        }
+
+        /* SCROLL TO BOTTOM */
+        .scroll-btn {
+            position: absolute;
+            bottom: 90px;
+            right: 24px;
+            width: 36px; height: 36px;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-soft);
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .scroll-btn:hover { background: var(--surface3); color: var(--text); }
+        .scroll-btn.visible { display: flex; }
+
+        /* INPUT BAR */
+        .input-bar {
+            border-top: 1px solid var(--border);
+            padding: 14px 20px;
+            background: var(--surface);
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .input-wrap { flex: 1; position: relative; }
+
+        textarea#msg {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border2);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 0.88rem;
+            font-family: inherit;
+            resize: none;
+            min-height: 46px;
+            max-height: 160px;
+            line-height: 1.55;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            display: block;
+        }
+
+        textarea#msg:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(91,143,212,0.12);
+        }
+
+        textarea#msg::placeholder { color: var(--text-dim); }
+        textarea#msg:disabled { opacity: 0.4; }
+
+        .input-hint {
+            font-size: 0.62rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+            padding: 0 2px;
+        }
+
+        .send-btn {
+            width: 44px; height: 44px;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            font-size: 1.1rem;
+        }
+        .send-btn:hover:not(:disabled) { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91,143,212,0.35); }
+        .send-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; }
+
+        /* ── CONFIRM DIALOG ─────────────────────────── */
+        .overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            backdrop-filter: blur(4px);
+        }
+        .overlay.open { display: flex; }
+
+        .dialog {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 16px;
+            padding: 28px 32px;
+            max-width: 380px;
+            width: 90%;
             text-align: center;
+            animation: popIn 0.2s ease;
+        }
+
+        @keyframes popIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+
+        .dialog h3 {
+            font-family: 'Lora', serif;
+            font-size: 1.05rem;
+            font-weight: 400;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .dialog p {
+            font-size: 0.8rem;
+            color: var(--text-soft);
+            margin-bottom: 22px;
+            line-height: 1.6;
+        }
+
+        .dialog-btns { display: flex; gap: 10px; justify-content: center; }
+
+        .dialog-btn {
+            padding: 9px 24px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .dialog-cancel {
+            background: var(--surface3);
+            color: var(--text-soft);
+            border: 1px solid var(--border2);
+        }
+        .dialog-cancel:hover { background: var(--border2); color: var(--text); }
+
+        .dialog-confirm {
+            background: var(--danger);
+            color: #fff;
+        }
+        .dialog-confirm:hover { background: #e84040; }
+
+        /* ── FILE MODAL ─────────────────────────────── */
+        .file-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            backdrop-filter: blur(3px);
+        }
+        .file-overlay.open { display: flex; }
+
+        .file-modal {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 700px;
+            width: 94%;
+            max-height: 82vh;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            animation: popIn 0.2s ease;
+        }
+
+        .file-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-modal-title {
+            font-size: 0.85rem;
+            color: #a8b8cc;
+            font-weight: 500;
+        }
+
+        .file-modal-close {
+            width: 28px; height: 28px;
+            background: var(--surface3);
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            color: var(--text-soft);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+        }
+        .file-modal-close:hover { background: var(--border2); color: var(--text); }
+
+        .file-modal pre {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'Lora', serif;
+            font-size: 0.82rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            color: #b8cce0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border2) transparent;
+        }
+
+        /* ── TOAST ──────────────────────────────────── */
+        #toast {
+            position: fixed;
+            bottom: 28px; right: 28px;
+            padding: 11px 18px;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            display: none;
+            z-index: 400;
+            max-width: 320px;
+            animation: slideUp 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        #toast.show { display: block; }
+        #toast.ok  { background: var(--success-bg); color: var(--success); border: 1px solid #1a5c38; }
+        #toast.err { background: #1a0808; color: #f08080; border: 1px solid #5a1818; }
+
+        @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+        /* ── LOGIN SCREEN ───────────────────────────── */
+        .login-screen {
+            position: fixed; inset: 0;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            background-image: radial-gradient(ellipse at 30% 50%, rgba(91,143,212,0.06) 0%, transparent 60%);
+        }
+
+        .login-card {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 20px;
+            padding: 40px 44px;
+            width: 100%;
+            max-width: 380px;
+            animation: popIn 0.3s ease;
+        }
+
+        .login-logo {
+            font-family: 'Lora', serif;
+            font-size: 1.4rem;
+            font-weight: 400;
+            color: #c0d4f0;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .login-sub {
+            font-size: 0.76rem;
+            color: var(--text-dim);
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .login-field { margin-bottom: 14px; }
+
+        .login-field label {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--text-soft);
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .login-field input {
+            width: 100%;
+            padding: 10px 13px;
+            background: var(--bg);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.88rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .login-field input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(91,143,212,0.15);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 11px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: all 0.2s;
+        }
+        .login-btn:hover { background: var(--accent2); }
+        .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .login-error {
+            font-size: 0.76rem;
+            color: #f08080;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 18px;
+        }
+
+        /* LOGOUT BTN */
+        .logout-btn {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .logout-btn:hover { color: var(--text-soft); border-color: var(--border2); background: var(--surface2); }
+
+        .header-user {
+            font-size: 0.76rem;
+            color: var(--text-soft);
+        }
+
+        /* ── SIDEBAR COLLAPSED ──────────────────────── */
+        .sidebar {
+            transition: width 0.3s cubic-bezier(.4,0,.2,1), transform 0.3s cubic-bezier(.4,0,.2,1);
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+            overflow: hidden;
+            border-right: none;
+        }
+
+        .sidebar-peek {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 80;
+            display: none;
+            width: 20px;
+            height: 56px;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            transition: all 0.2s;
+        }
+        .sidebar-peek:hover { background: var(--surface3); color: var(--text-soft); width: 24px; }
+        .sidebar-peek.visible { display: flex; }
+
+        /* ── RESPONSIVE ─────────────────────────────── */
+        @media (max-width: 700px) {
+            .menu-btn { display: flex; align-items: center; justify-content: center; }
+            .sidebar {
+                position: fixed;
+                top: 52px; left: 0; bottom: 0;
+                z-index: 90;
+                transform: translateX(-100%);
+                box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+                width: var(--sidebar-w) !important;
+            }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar.collapsed { transform: translateX(-100%); width: var(--sidebar-w) !important; }
+            .messages { padding: 20px 16px; }
+            .input-bar { padding: 12px 14px; }
         }
     </style>
 </head>
 <body>
 
-<header>
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-card">
+        <div class="login-logo">Breakthrough</div>
+        <div class="login-sub">The Breakthrough Programme</div>
+        <div class="login-field">
+            <label>Username</label>
+            <input type="text" id="loginUser" placeholder="Enter your username" autocomplete="username"
+                onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <div class="login-field">
+            <label>Password</label>
+            <input type="password" id="loginPass" placeholder="Enter your password" autocomplete="current-password"
+                onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+        <div class="login-error" id="loginError"></div>
+    </div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+    <button class="menu-btn" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+    <span class="header-logo">Breakthrough</span>
+    <div class="header-sep"></div>
+    <div class="session-pill" id="sessionPill">
+        <span class="type-badge type-default" id="pillBadge"></span>
+        <span id="pillLabel"></span>
+    </div>
+    <span class="header-user" id="headerUser"></span>
     <div class="status-dot" id="statusDot"></div>
-    <h1>The Breakthrough Programme</h1>
-    <span id="sessionLabel" style="font-size:0.8rem; color:#6b7a99; margin-left:auto;"></span>
+    <button class="logout-btn" onclick="doLogout()">Sign out</button>
 </header>
 
-<div class="main">
-    <aside class="sidebar">
-        <div class="sidebar-section">
-            <h3>New Session</h3>
-            <div class="form-group">
-                <label>Client Name</label>
-                <input type="text" id="clientName" placeholder="e.g. sapandeep" list="clientsList">
-                <datalist id="clientsList"></datalist>
-            </div>
-            <div class="form-group">
-                <label>Mode</label>
-                <select id="sessionMode">
-                    <option value="session">Full Session</option>
-                    <option value="checkin">Quick Check-in</option>
-                    <option value="review">Weekly Review</option>
-                </select>
-            </div>
-            <div class="form-group" id="sessionTypeGroup">
-                <label>Session Type</label>
-                <select id="sessionType">
-                    <option value="">Auto-select</option>
-                </select>
-            </div>
-            <button class="btn btn-primary" id="startBtn" onclick="startSession()">Begin Session</button>
-            <button class="btn btn-danger" id="endBtn" onclick="endSession()" disabled>End & Summarise</button>
-            <div class="session-info" id="sessionInfo"></div>
-        </div>
+<button class="sidebar-peek" id="sidebarPeek" onclick="expandSidebar()" title="Show panel">›</button>
 
-        <div class="sidebar-section" id="historySection" style="flex:1;">
-            <h3>Session History</h3>
-            <ul class="sessions-list" id="sessionsList"></ul>
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-inner">
+
+            <div class="sidebar-block">
+                <div class="sidebar-label">Session</div>
+
+                <div class="field">
+                    <label>Mode</label>
+                    <select id="sessionMode">
+                        <option value="session">Full Session</option>
+                        <option value="checkin">Quick Check-in</option>
+                        <option value="review">Weekly Review</option>
+                    </select>
+                </div>
+
+                <div class="field" id="typeField">
+                    <label>Session Type</label>
+                    <select id="sessionType">
+                        <option value="">Auto-select</option>
+                    </select>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-start" id="startBtn" onclick="startSession()">Begin Session</button>
+                    <button class="btn btn-end"   id="endBtn"   onclick="confirmEnd()" disabled>End & Summarise</button>
+                </div>
+
+                <div class="active-card" id="activeCard">
+                    <div class="active-card-name" id="activeCardName"></div>
+                    <div class="active-card-mode" id="activeCardMode"></div>
+                </div>
+            </div>
+
+            <div class="sidebar-block" style="flex:1; border-bottom:none;">
+                <div class="sidebar-label">History</div>
+                <div id="historyList"><p style="font-size:0.72rem;color:var(--text-dim);">Start a session to see history.</p></div>
+            </div>
+
         </div>
     </aside>
 
-    <div class="chat-area">
-        <div class="chat-messages" id="chatMessages">
-            <div class="no-session-overlay" id="noSessionOverlay">
-                <div class="icon">🌿</div>
-                <div class="welcome">Enter a client name and begin a session to start. The programme uses text-based interaction in this environment.</div>
+    <!-- CHAT -->
+    <main class="chat">
+        <div class="messages" id="messages">
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">🌿</div>
+                <div>
+                    <div class="empty-title">The Breakthrough Programme</div>
+                    <div class="empty-sub">Choose a client and begin a session. All sessions are saved and synced to GitHub automatically.</div>
+                </div>
             </div>
         </div>
-        <div class="thinking" id="thinkingIndicator">Claude is thinking...</div>
-        <div class="chat-input-area">
-            <textarea id="messageInput" placeholder="Type your message..." rows="2"
-                onkeydown="handleKeyDown(event)" disabled></textarea>
-            <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+
+        <div class="thinking" id="thinking">
+            <div class="dots"><span></span><span></span><span></span></div>
+            Reflecting...
+        </div>
+
+        <button class="scroll-btn" id="scrollBtn" onclick="scrollToBottom()" title="Scroll to bottom">↓</button>
+
+        <div class="input-bar">
+            <div class="input-wrap">
+                <textarea id="msg" placeholder="Type your message…" rows="1"
+                    onkeydown="onKey(event)" oninput="onInput(this)" disabled></textarea>
+                <div class="input-hint" id="inputHint">Enter to send &nbsp;·&nbsp; Shift+Enter for new line</div>
+            </div>
+            <button class="send-btn" id="sendBtn" onclick="send()" disabled title="Send">↑</button>
+        </div>
+    </main>
+
+</div>
+
+<!-- CONFIRM END DIALOG -->
+<div class="overlay" id="confirmOverlay">
+    <div class="dialog">
+        <h3>End this session?</h3>
+        <p>A summary will be generated and the session will be saved and pushed to GitHub.</p>
+        <div class="dialog-btns">
+            <button class="dialog-btn dialog-cancel" onclick="closeConfirm()">Cancel</button>
+            <button class="dialog-btn dialog-confirm" onclick="endSession()">End & Save</button>
         </div>
     </div>
 </div>
 
-<div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-        <h2 id="modalTitle">Session File</h2>
-        <pre id="modalContent"></pre>
-        <button class="modal-close" onclick="closeModal()">Close</button>
+<!-- FILE VIEWER MODAL -->
+<div class="file-overlay" id="fileOverlay" onclick="closeFileIfOutside(event)">
+    <div class="file-modal">
+        <div class="file-modal-header">
+            <span class="file-modal-title" id="fileTitle"></span>
+            <button class="file-modal-close" onclick="closeFile()">✕</button>
+        </div>
+        <pre id="fileContent"></pre>
     </div>
 </div>
 
-<script>
-let activeSession = false;
+<!-- TOAST -->
+<div id="toast"></div>
 
-async function loadClients() {
-    try {
-        const res = await fetch('/api/clients');
-        const data = await res.json();
-        const list = document.getElementById('clientsList');
-        list.innerHTML = '';
-        data.clients.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c;
-            list.appendChild(opt);
-        });
-    } catch(e) {}
+<script>
+'use strict';
+
+let _active = false;
+let _currentUser = null;
+
+// ── TOAST ───────────────────────────────────────
+let _toastTimer;
+function toast(msg, type = 'ok', ms = 3500) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `show ${type}`;
+    el.style.display = 'block';
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { el.style.display = 'none'; }, ms);
 }
 
-async function loadSessionTypes() {
+// ── STATUS ──────────────────────────────────────
+function setStatus(s) {
+    document.getElementById('statusDot').className = 'status-dot' + (s ? ' ' + s : '');
+}
+
+// ── SIDEBAR ─────────────────────────────────────
+function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    if (sb.classList.contains('collapsed')) {
+        expandSidebar();
+    } else {
+        collapseSidebar();
+    }
+}
+
+function collapseSidebar() {
+    document.getElementById('sidebar').classList.add('collapsed');
+    document.getElementById('sidebarPeek').classList.add('visible');
+}
+
+function expandSidebar() {
+    document.getElementById('sidebar').classList.remove('collapsed');
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarPeek').classList.remove('visible');
+}
+
+document.addEventListener('click', e => {
+    const sb = document.getElementById('sidebar');
+    if (window.innerWidth <= 700 && sb.classList.contains('open')
+        && !sb.contains(e.target) && !e.target.closest('.menu-btn')) {
+        sb.classList.remove('open');
+    }
+});
+
+// ── AUTH ─────────────────────────────────────────
+async function doLogin() {
+    const username = document.getElementById('loginUser').value.trim();
+    const password = document.getElementById('loginPass').value;
+    const errEl = document.getElementById('loginError');
+    const btn = document.getElementById('loginBtn');
+
+    if (!username || !password) { errEl.textContent = 'Please enter username and password.'; return; }
+
+    btn.disabled = true;
+    errEl.textContent = '';
+
     try {
-        const res = await fetch('/api/session/types');
-        const data = await res.json();
+        const r = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const d = await r.json();
+
+        if (!r.ok) { errEl.textContent = d.error || 'Login failed.'; btn.disabled = false; return; }
+
+        _currentUser = d;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('headerUser').textContent = d.display_name;
+        document.getElementById('activeCardName').textContent = d.display_name;
+        loadTypes();
+        loadHistory();
+    } catch(e) {
+        errEl.textContent = 'Connection error. Please try again.';
+        btn.disabled = false;
+    }
+}
+
+async function doLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    _currentUser = null;
+    _active = false;
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('messages').innerHTML = `
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🌿</div>
+            <div>
+                <div class="empty-title">The Breakthrough Programme</div>
+                <div class="empty-sub">Choose a client and begin a session. All sessions are saved and synced to GitHub automatically.</div>
+            </div>
+        </div>`;
+    document.getElementById('sessionPill').classList.remove('visible');
+    document.getElementById('activeCard').classList.remove('visible');
+    document.getElementById('endBtn').disabled = true;
+    document.getElementById('msg').disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+    document.getElementById('startBtn').disabled = false;
+    setStatus('');
+}
+
+// ── INIT ─────────────────────────────────────────
+async function init() {
+    // Check if already logged in
+    try {
+        const r = await fetch('/api/auth/me');
+        if (r.ok) {
+            const d = await r.json();
+            if (d.authenticated) {
+                _currentUser = d;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('headerUser').textContent = d.display_name;
+                document.getElementById('activeCardName').textContent = d.display_name;
+                loadTypes();
+                loadHistory();
+            }
+        }
+    } catch(_) {}
+}
+
+async function loadTypes() {
+    try {
+        const r = await fetch('/api/session/types');
+        const d = await r.json();
         const sel = document.getElementById('sessionType');
         sel.innerHTML = '<option value="">Auto-select</option>';
-        Object.entries(data.types).forEach(([k, v]) => {
-            const opt = document.createElement('option');
-            opt.value = k;
-            opt.textContent = `${k}: ${v.split('—')[0].trim()}`;
-            sel.appendChild(opt);
+        Object.entries(d.types).forEach(([k, v]) => {
+            const o = document.createElement('option');
+            o.value = k;
+            o.textContent = `${k} — ${v.split('—')[0].trim()}`;
+            sel.appendChild(o);
         });
-    } catch(e) {}
+    } catch(_) {}
 }
 
 document.getElementById('sessionMode').addEventListener('change', function() {
-    document.getElementById('sessionTypeGroup').style.display =
-        this.value === 'session' ? 'block' : 'none';
+    document.getElementById('typeField').style.display = this.value === 'session' ? 'block' : 'none';
 });
 
+// ── SESSION START ────────────────────────────────
 async function startSession() {
-    const clientName = document.getElementById('clientName').value.trim();
-    if (!clientName) {
-        alert('Please enter a client name.');
-        return;
-    }
+    if (!_currentUser) return;
 
     const mode = document.getElementById('sessionMode').value;
-    const sessionType = document.getElementById('sessionType').value;
+    const type = document.getElementById('sessionType').value;
 
     document.getElementById('startBtn').disabled = true;
 
     try {
-        const res = await fetch('/api/session/start', {
+        const r = await fetch('/api/session/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ client_name: clientName, session_type: sessionType || null, mode })
+            body: JSON.stringify({ session_type: type || null, mode })
         });
-        const data = await res.json();
+        const d = await r.json();
 
-        if (data.error) {
-            alert(data.error);
-            document.getElementById('startBtn').disabled = false;
-            return;
-        }
+        if (d.error) { toast(d.error, 'err'); document.getElementById('startBtn').disabled = false; return; }
 
-        activeSession = true;
+        _active = true;
         document.getElementById('endBtn').disabled = false;
-        document.getElementById('messageInput').disabled = false;
+        document.getElementById('msg').disabled = false;
         document.getElementById('sendBtn').disabled = false;
-        document.getElementById('noSessionOverlay').style.display = 'none';
+        document.getElementById('emptyState') && (document.getElementById('emptyState').style.display = 'none');
+        setStatus('active');
 
-        setStatusDot('active');
+        const modeLabel = { session: 'Session', checkin: 'Check-in', review: 'Weekly Review' }[mode];
+        const typeLabel = mode === 'session' && d.session_type ? `Type ${d.session_type}` : modeLabel;
 
-        const modeLabels = { session: 'Session', checkin: 'Check-in', review: 'Weekly Review' };
-        const label = mode === 'session' && data.session_type
-            ? `Type ${data.session_type} — ${modeLabels[mode]}`
-            : modeLabels[mode];
-        document.getElementById('sessionLabel').textContent = `${clientName} · ${label}`;
+        // Header pill
+        const badge = document.getElementById('pillBadge');
+        badge.textContent = typeLabel;
+        badge.className = `type-badge type-${d.session_type || 'default'}`;
+        document.getElementById('pillLabel').textContent = _currentUser.display_name;
+        document.getElementById('sessionPill').classList.add('visible');
 
-        const info = document.getElementById('sessionInfo');
-        info.innerHTML = `<strong>${clientName.charAt(0).toUpperCase() + clientName.slice(1)}</strong>
-            ${mode === 'session' ? `Type ${data.session_type}: ${data.session_type_desc.split('—')[0].trim()}` : modeLabels[mode]}`;
-        info.classList.add('visible');
+        // Active card
+        document.getElementById('activeCardMode').textContent = d.session_type
+            ? `${d.session_type_desc.split('—')[0].trim()}`
+            : modeLabel;
+        document.getElementById('activeCard').classList.add('visible');
 
-        addMessage('system', `Session started — ${label}. Begin when ready.`);
-        document.getElementById('messageInput').focus();
-
-        loadSessionHistory(clientName);
-
+        addMsg('system', `Session started — ${typeLabel}`);
+        document.getElementById('msg').focus();
+        collapseSidebar();
     } catch(e) {
-        alert('Failed to start session: ' + e.message);
+        toast('Failed to start: ' + e.message, 'err');
         document.getElementById('startBtn').disabled = false;
     }
 }
 
-async function sendMessage() {
-    const input = document.getElementById('messageInput');
-    const text = input.value.trim();
-    if (!text || !activeSession) return;
+// ── SEND MESSAGE ─────────────────────────────────
+async function send() {
+    const ta = document.getElementById('msg');
+    const text = ta.value.trim();
+    if (!text || !_active) return;
 
-    input.value = '';
-    input.style.height = '';
+    ta.value = ''; ta.style.height = '';
+    document.getElementById('inputHint').style.display = 'block';
     document.getElementById('sendBtn').disabled = true;
-    document.getElementById('messageInput').disabled = true;
+    ta.disabled = true;
 
-    addMessage('user', text);
-
-    setStatusDot('thinking');
-    document.getElementById('thinkingIndicator').classList.add('visible');
+    addMsg('user', text);
+    setStatus('thinking');
+    document.getElementById('thinking').classList.add('visible');
+    scrollToBottom();
 
     try {
-        const res = await fetch('/api/session/message', {
+        const r = await fetch('/api/session/message', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: text })
         });
-        const data = await res.json();
-
-        document.getElementById('thinkingIndicator').classList.remove('visible');
-        setStatusDot('active');
-
-        if (data.error) {
-            addMessage('error', data.error);
-        } else {
-            addMessage('assistant', data.response);
-        }
+        const d = await r.json();
+        document.getElementById('thinking').classList.remove('visible');
+        setStatus('active');
+        addMsg(d.error ? 'error' : 'assistant', d.error || d.response);
     } catch(e) {
-        document.getElementById('thinkingIndicator').classList.remove('visible');
-        setStatusDot('active');
-        addMessage('error', 'Connection error: ' + e.message);
+        document.getElementById('thinking').classList.remove('visible');
+        setStatus('active');
+        addMsg('error', 'Connection error: ' + e.message);
     } finally {
         document.getElementById('sendBtn').disabled = false;
-        document.getElementById('messageInput').disabled = false;
-        document.getElementById('messageInput').focus();
+        ta.disabled = false;
+        ta.focus();
     }
+}
+
+// ── END SESSION ──────────────────────────────────
+function confirmEnd() {
+    if (!_active) return;
+    document.getElementById('confirmOverlay').classList.add('open');
+}
+
+function closeConfirm() {
+    document.getElementById('confirmOverlay').classList.remove('open');
 }
 
 async function endSession() {
-    if (!activeSession) return;
-    if (!confirm('End session and generate summary?')) return;
-
+    closeConfirm();
     document.getElementById('endBtn').disabled = true;
     document.getElementById('sendBtn').disabled = true;
-    document.getElementById('messageInput').disabled = true;
-    setStatusDot('thinking');
-    addMessage('system', 'Generating session summary...');
+    document.getElementById('msg').disabled = true;
+    setStatus('thinking');
+    addMsg('system', 'Generating summary…');
 
     try {
-        const res = await fetch('/api/session/end', {
+        const r = await fetch('/api/session/end', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
-        const data = await res.json();
 
-        setStatusDot('');
-        activeSession = false;
-        document.getElementById('sessionLabel').textContent = '';
-        document.getElementById('sessionInfo').classList.remove('visible');
-        document.getElementById('startBtn').disabled = false;
-
-        if (data.summary) {
-            addMessage('system', '--- Session Summary ---');
-            addMessage('assistant', data.summary);
+        if (!r.ok) {
+            const txt = await r.text();
+            let msg = 'Server error';
+            try { msg = JSON.parse(txt).error || msg; } catch(_) {}
+            throw new Error(msg);
         }
 
-        addMessage('system', 'Session ended.');
+        const d = await r.json();
+        setStatus('');
+        _active = false;
 
-        const clientName = document.getElementById('clientName').value.trim();
-        if (clientName) loadSessionHistory(clientName);
+        document.getElementById('sessionPill').classList.remove('visible');
+        document.getElementById('activeCard').classList.remove('visible');
+        document.getElementById('startBtn').disabled = false;
 
+        if (d.summary) {
+            addMsg('system', '— Session Summary —');
+            addMsg('assistant', d.summary);
+        }
+        addMsg('system', 'Session complete. Saved and synced to GitHub.');
+        toast('Saved and synced to GitHub ✓', 'ok', 4000);
+        loadHistory();
+        expandSidebar();
     } catch(e) {
-        addMessage('error', 'Failed to end session: ' + e.message);
-        setStatusDot('');
+        toast(e.message, 'err', 5000);
+        setStatus('active');
         document.getElementById('endBtn').disabled = false;
+        document.getElementById('sendBtn').disabled = false;
+        document.getElementById('msg').disabled = false;
     }
 }
 
-async function loadSessionHistory(clientName) {
+// ── HISTORY ──────────────────────────────────────
+async function loadHistory() {
+    const el = document.getElementById('historyList');
+    el.innerHTML = '<p style="font-size:0.72rem;color:var(--text-dim);">Loading…</p>';
     try {
-        const res = await fetch(`/api/sessions/${encodeURIComponent(clientName)}`);
-        const data = await res.json();
-        const list = document.getElementById('sessionsList');
-        list.innerHTML = '';
-        data.sessions.forEach(s => {
-            const li = document.createElement('li');
-            li.textContent = s.name;
-            li.title = s.name;
-            li.onclick = () => viewSessionFile(clientName, s.name);
-            list.appendChild(li);
+        const r = await fetch('/api/sessions/mine');
+        const d = await r.json();
+        el.innerHTML = '';
+
+        if (!d.sessions.length) {
+            el.innerHTML = '<p style="font-size:0.72rem;color:var(--text-dim);">No sessions yet.</p>';
+            return;
+        }
+
+        const groups = {};
+        d.sessions.forEach(s => {
+            const date = /^\d{4}-\d{2}-\d{2}/.test(s.name) ? s.name.slice(0,10) : 'other';
+            (groups[date] = groups[date] || []).push(s);
         });
-    } catch(e) {}
-}
 
-async function viewSessionFile(clientName, filename) {
-    try {
-        const res = await fetch(`/api/sessions/${encodeURIComponent(clientName)}/${encodeURIComponent(filename)}`);
-        const data = await res.json();
-        document.getElementById('modalTitle').textContent = filename;
-        document.getElementById('modalContent').textContent = data.content;
-        document.getElementById('modalOverlay').classList.add('visible');
-    } catch(e) {}
-}
+        Object.entries(groups).forEach(([date, files]) => {
+            const lbl = document.createElement('div');
+            lbl.className = 'hist-date';
+            lbl.textContent = date === 'other' ? 'Other' : fmtDate(date);
+            el.appendChild(lbl);
 
-function closeModal() {
-    document.getElementById('modalOverlay').classList.remove('visible');
-}
+            files.forEach(s => {
+                const icon = s.name.includes('checkin') ? '💬'
+                           : s.name.includes('progress') ? '📊'
+                           : s.name.includes('micro')    ? '✅'
+                           : s.name.includes('somatic')  ? '🫁' : '📄';
+                const numM = s.name.match(/_session_(\d+)/);
+                const num  = numM ? `#${parseInt(numM[1])}` : '';
 
-function addMessage(type, text) {
-    const container = document.getElementById('chatMessages');
-    const div = document.createElement('div');
-    div.className = `message ${type}`;
-    div.textContent = text;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-}
-
-function setStatusDot(state) {
-    const dot = document.getElementById('statusDot');
-    dot.className = 'status-dot' + (state ? ' ' + state : '');
-}
-
-function handleKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
+                const item = document.createElement('div');
+                item.className = 'hist-item';
+                item.innerHTML = `<span class="hist-icon">${icon}</span>
+                    <span class="hist-name">${s.name.replace('.md','')}</span>
+                    ${num ? `<span class="hist-num">${num}</span>` : ''}`;
+                item.onclick = () => openFile(s.name);
+                el.appendChild(item);
+            });
+        });
+    } catch(_) {
+        el.innerHTML = '<p style="font-size:0.72rem;color:var(--text-dim);">Failed to load.</p>';
     }
 }
 
-document.getElementById('messageInput').addEventListener('input', function() {
-    this.style.height = '';
-    this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+function fmtDate(s) {
+    try { return new Date(s + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); }
+    catch(_) { return s; }
+}
+
+// ── FILE VIEWER ──────────────────────────────────
+async function openFile(filename) {
+    try {
+        const r = await fetch(`/api/sessions/mine/${encodeURIComponent(filename)}`);
+        const d = await r.json();
+        document.getElementById('fileTitle').textContent = filename;
+        document.getElementById('fileContent').textContent = d.content;
+        document.getElementById('fileOverlay').classList.add('open');
+    } catch(_) {}
+}
+
+function closeFile() { document.getElementById('fileOverlay').classList.remove('open'); }
+
+function closeFileIfOutside(e) { if (e.target === document.getElementById('fileOverlay')) closeFile(); }
+
+// ── MESSAGES ─────────────────────────────────────
+function addMsg(type, text) {
+    const msgs = document.getElementById('messages');
+    const wrap = document.createElement('div');
+    wrap.className = `msg ${type}`;
+
+    if (type === 'system') {
+        wrap.innerHTML = `<div class="msg-bubble">${esc(text)}</div>`;
+    } else {
+        const time = new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+        wrap.innerHTML = `
+            <div class="msg-bubble">${esc(text)}</div>
+            <div class="msg-meta">
+                <span class="msg-time">${time}</span>
+                ${type !== 'error' ? `<button class="copy-btn" onclick="copyMsg(this)">copy</button>` : ''}
+            </div>`;
+    }
+
+    msgs.appendChild(wrap);
+    scrollToBottom();
+}
+
+function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/\n/g,'<br>');
+}
+
+function copyMsg(btn) {
+    const text = btn.closest('.msg').querySelector('.msg-bubble').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'copied!';
+        setTimeout(() => btn.textContent = 'copy', 1500);
+    });
+}
+
+// ── SCROLL ───────────────────────────────────────
+function scrollToBottom() {
+    const c = document.getElementById('messages');
+    setTimeout(() => c.scrollTop = c.scrollHeight, 30);
+}
+
+document.getElementById('messages').addEventListener('scroll', function() {
+    const atBottom = this.scrollHeight - this.scrollTop - this.clientHeight < 80;
+    document.getElementById('scrollBtn').classList.toggle('visible', !atBottom);
 });
 
-document.getElementById('modalOverlay').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
+// ── INPUT ────────────────────────────────────────
+function onKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+}
+
+function onInput(el) {
+    el.style.height = '';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+// ── KEYBOARD SHORTCUTS ───────────────────────────
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        closeConfirm();
+        closeFile();
+        document.getElementById('sidebar').classList.remove('open');
+    }
 });
 
-loadClients();
-loadSessionTypes();
+init();
 </script>
-
 </body>
 </html>
