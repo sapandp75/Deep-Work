@@ -6,7 +6,9 @@
       "Bash(git push:*)",
       "Bash(git reset:*)",
       "Bash(git restore:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(find /home/runner -iname *meta* -o -iname *CLAUDE*)"
     ]
   }
 }
