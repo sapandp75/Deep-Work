@@ -104,6 +104,8 @@ def _gemini_chat(system_prompt, messages, user_message, max_tokens=1024):
                 system_instruction=system_prompt, max_output_tokens=max_tokens
             ),
         )
+        if response.text is None:
+            return None, "Gemini returned empty response (possibly blocked by safety filters)."
         return _clean_text(response.text), None
 
     except Exception as e:
@@ -199,6 +201,8 @@ Be honest. If no felt shift occurred, say so. The body is the scoreboard."""
             contents=summary_prompt,
             config=types.GenerateContentConfig(max_output_tokens=2048),
         )
+        if response.text is None:
+            return None, "Gemini returned empty response (possibly blocked by safety filters)."
         return response.text.strip(), None
     except Exception as e:
         return None, f"Summary failed: {str(e)}"
