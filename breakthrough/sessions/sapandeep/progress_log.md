@@ -24,3 +24,9 @@ Each entry records: date, session type, defences observed, somatic data, felt sh
 Continuation of Session 1 somatic work. Left chest: sharp pain, clenched fist sensation, 8/10. Cut off mid-session.
 
 ---
+
+### 2026-04-03 — Session 3 (Type A)
+
+(Summary generation failed — review transcript manually)
+
+---
