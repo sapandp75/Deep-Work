@@ -77,7 +77,7 @@ def _groq_chat(system_prompt, messages, user_message, max_tokens=1024):
         return None, f"Groq error: {str(e)}"
 
 
-def _gemini_chat(system_prompt, messages, user_message, max_tokens=1024):
+def _gemini_chat(system_prompt, messages, user_message, max_tokens=8192):
     """
     Call Google Gemini as final fallback.
     Returns (response_text, error_message).
@@ -101,7 +101,14 @@ def _gemini_chat(system_prompt, messages, user_message, max_tokens=1024):
             model="gemini-2.5-pro",
             contents=contents,
             config=types.GenerateContentConfig(
-                system_instruction=system_prompt, max_output_tokens=max_tokens
+                system_instruction=system_prompt,
+                max_output_tokens=max_tokens,
+                safety_settings=[
+                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="OFF"),
+                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="OFF"),
+                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="OFF"),
+                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="OFF"),
+                ],
             ),
         )
         if response.text is None:
@@ -129,6 +136,8 @@ def get_claude_response(system_prompt, conversation, user_message):
     text, err = _groq_chat(system_prompt, recent, user_message)
     if text:
         return text, None
+    if err:
+        print(f"  [fallback] Groq failed: {err}")
 
     # 3. Gemini
     return _gemini_chat(system_prompt, recent, user_message)
@@ -199,7 +208,15 @@ Be honest. If no felt shift occurred, say so. The body is the scoreboard."""
         response = client.models.generate_content(
             model="gemini-2.5-pro",
             contents=summary_prompt,
-            config=types.GenerateContentConfig(max_output_tokens=2048),
+            config=types.GenerateContentConfig(
+                max_output_tokens=2048,
+                safety_settings=[
+                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="OFF"),
+                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="OFF"),
+                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="OFF"),
+                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="OFF"),
+                ],
+            ),
         )
         if response.text is None:
             return None, "Gemini returned empty response (possibly blocked by safety filters)."
