@@ -361,8 +361,11 @@ def get_recent_session_types(client_name, count=5):
         content = f.read_text()
         for line in content.split("\n"):
             if line.startswith("**Session Type:"):
-                session_type = line.split(":")[-1].strip().rstrip("*")
-                types.append(session_type)
+                # Extract single letter A-E from e.g. "**Session Type:** A"
+                for char in "ABCDE":
+                    if char in line.split(":")[-1]:
+                        types.append(char)
+                        break
                 break
 
     return types
@@ -388,15 +391,60 @@ def extract_recommended_type(client_name):
 
 
 def select_session_type(client_name):
-    """Select the next session type — honor AI recommendation, then least-used rotation."""
-    # First: check if the last session's summary recommended a specific type
-    recommended = extract_recommended_type(client_name)
+    """Use AI to select the best session type based on full therapeutic context."""
     recent_types = get_recent_session_types(client_name)
-    last_type = recent_types[0] if recent_types else None
+    summaries = load_all_session_summaries(client_name, max_sessions=5)
+    micro_actions = load_micro_actions(client_name)
+    progress_log = load_recent_progress_log(client_name)
+    thread = extract_thread_from_last_session(client_name)
 
-    # Honor recommendation if it exists and isn't the same type we just did
-    if recommended and recommended != last_type:
-        return recommended
+    type_descriptions = "\n".join(f"  {k}: {v}" for k, v in SESSION_TYPES.items())
+    recent_str = ", ".join(recent_types) if recent_types else "None"
+
+    selection_prompt = f"""You are selecting the next therapy session type for a client. Choose the BEST type based on therapeutic need, not rotation.
+
+SESSION TYPES:
+{type_descriptions}
+
+RECENT SESSION TYPES (most recent first): {recent_str}
+
+RECENT SESSION SUMMARIES:
+{summaries if summaries else "(No summaries available)"}
+
+PENDING MICRO-ACTIONS:
+{micro_actions if micro_actions else "(None)"}
+
+PROGRESS LOG:
+{progress_log if progress_log else "(No entries)"}
+
+UNFINISHED THREAD FROM LAST SESSION:
+{thread if thread else "(None)"}
+
+SELECTION CRITERIA (in priority order):
+1. If there are pending micro-actions that haven't been debriefed → Type D
+2. If the last 3+ sessions were all the same type → pick a DIFFERENT type
+3. If the last session had deep emotional material that needs integration → Type D or E
+4. If the last session recommended a specific next type → honor it
+5. If no somatic tracking has been done recently → Type E
+6. If inner child work was started but not completed → Type C
+7. If core transformation would serve the current thread → Type B
+8. If pressure work is needed for new material → Type A
+
+RESPOND WITH EXACTLY ONE LETTER: A, B, C, D, or E. Nothing else."""
+
+    try:
+        result = subprocess.run(
+            ["claude", "-p", selection_prompt],
+            capture_output=True, text=True, timeout=30
+        )
+        response = result.stdout.strip().upper()
+        # Extract the letter from response
+        for char in "ABCDE":
+            if char in response:
+                print(f"  AI selected session type: {char}")
+                return char
+    except Exception as e:
+        print(f"  Session type selection fallback (AI error: {e})")
 
     # Fallback: least-used rotation
     type_keys = list(SESSION_TYPES.keys())
@@ -404,11 +452,10 @@ def select_session_type(client_name):
     for t in recent_types:
         if t in usage:
             usage[t] += 1
-
+    last_type = recent_types[0] if recent_types else None
     candidates = [t for t in type_keys if t != last_type]
     if not candidates:
         candidates = type_keys
-
     candidates.sort(key=lambda t: usage[t])
     return candidates[0]
 
