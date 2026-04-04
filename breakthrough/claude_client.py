@@ -1,14 +1,16 @@
 """
-Groq API client for the Breakthrough Programme web interface.
-Falls back to Gemini if Groq rate-limits or fails.
+AI client for the Breakthrough Programme web interface.
+Backend priority: Ollama (local) → Groq → Gemini
 """
 
 import os
+import requests
 from groq import Groq
 from groq import AuthenticationError, RateLimitError
 
 MAX_CONTEXT_EXCHANGES = 15
-MODEL = "llama-3.1-8b-instant"
+GROQ_MODEL = "llama-3.1-8b-instant"
+OLLAMA_HOST = "http://localhost:11434"
 
 
 def _clean_text(text):
@@ -19,9 +21,65 @@ def _clean_text(text):
     return text.strip()
 
 
-def _gemini_chat(system_prompt, messages, user_message):
+def _ollama_chat(system_prompt, messages, user_message, max_tokens=1024):
     """
-    Call Google Gemini as fallback.
+    Call local Ollama instance.
+    Returns (response_text, error_message).
+    """
+    model = os.environ.get("OLLAMA_MODEL")
+    if not model:
+        return None, "OLLAMA_MODEL not set."
+
+    payload = {
+        "model": model,
+        "stream": False,
+        "options": {"num_predict": max_tokens},
+        "messages": [{"role": "system", "content": system_prompt}]
+        + [{"role": m["role"], "content": m["content"]} for m in messages]
+        + [{"role": "user", "content": user_message}],
+    }
+
+    try:
+        r = requests.post(f"{OLLAMA_HOST}/api/chat", json=payload, timeout=120)
+        r.raise_for_status()
+        text = r.json()["message"]["content"]
+        return _clean_text(text), None
+    except requests.exceptions.ConnectionError:
+        return None, "Ollama not running. Start it with: ollama serve"
+    except Exception as e:
+        return None, f"Ollama error: {str(e)}"
+
+
+def _groq_chat(system_prompt, messages, user_message, max_tokens=1024):
+    """
+    Call Groq API.
+    Returns (response_text, error_message).
+    """
+    api_key = os.environ.get("Groq_SB")
+    if not api_key:
+        return None, "Groq_SB not set."
+
+    try:
+        client = Groq(api_key=api_key)
+        msgs = [{"role": "system", "content": system_prompt}]
+        for m in messages:
+            msgs.append({"role": m["role"], "content": m["content"]})
+        msgs.append({"role": "user", "content": user_message})
+
+        response = client.chat.completions.create(
+            model=GROQ_MODEL, max_tokens=max_tokens, messages=msgs
+        )
+        return _clean_text(response.choices[0].message.content), None
+
+    except (AuthenticationError, RateLimitError):
+        return None, "Groq rate limit or auth error."
+    except Exception as e:
+        return None, f"Groq error: {str(e)}"
+
+
+def _gemini_chat(system_prompt, messages, user_message, max_tokens=1024):
+    """
+    Call Google Gemini as final fallback.
     Returns (response_text, error_message).
     """
     api_key = os.environ.get("Gemini_API_SB")
@@ -33,7 +91,6 @@ def _gemini_chat(system_prompt, messages, user_message):
         from google.genai import types
 
         client = genai.Client(api_key=api_key)
-
         contents = []
         for msg in messages:
             role = "user" if msg["role"] == "user" else "model"
@@ -43,7 +100,9 @@ def _gemini_chat(system_prompt, messages, user_message):
         response = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=contents,
-            config=types.GenerateContentConfig(system_instruction=system_prompt, max_output_tokens=1024),
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt, max_output_tokens=max_tokens
+            ),
         )
         return _clean_text(response.text), None
 
@@ -53,41 +112,29 @@ def _gemini_chat(system_prompt, messages, user_message):
 
 def get_claude_response(system_prompt, conversation, user_message):
     """
-    Send message to Groq API, falling back to Gemini on rate limit or auth error.
+    Send message using Ollama → Groq → Gemini fallback chain.
     Returns (response_text, error_message).
     """
-    api_key = os.environ.get("Groq_SB")
     recent = conversation[-(MAX_CONTEXT_EXCHANGES * 2):]
 
-    if api_key:
-        try:
-            client = Groq(api_key=api_key)
-            messages = [{"role": "system", "content": system_prompt}]
-            for msg in recent:
-                messages.append({"role": msg["role"], "content": msg["content"]})
-            messages.append({"role": "user", "content": user_message})
+    # 1. Ollama (local Mac only — when OLLAMA_MODEL is set)
+    if os.environ.get("OLLAMA_MODEL"):
+        text, err = _ollama_chat(system_prompt, recent, user_message)
+        if text:
+            return text, None
 
-            response = client.chat.completions.create(
-                model=MODEL,
-                max_tokens=1024,
-                messages=messages,
-            )
-            return _clean_text(response.choices[0].message.content), None
+    # 2. Groq
+    text, err = _groq_chat(system_prompt, recent, user_message)
+    if text:
+        return text, None
 
-        except (AuthenticationError, RateLimitError):
-            # Fall through to Gemini
-            pass
-        except Exception as e:
-            # Fall through to Gemini for any other Groq error
-            pass
-
-    # Gemini fallback
+    # 3. Gemini
     return _gemini_chat(system_prompt, recent, user_message)
 
 
 def generate_summary(client_name, session_type, conversation, system_prompt):
     """
-    Generate a session summary. Tries Groq first, falls back to Gemini.
+    Generate session summary using Ollama → Groq → Gemini fallback chain.
     Returns (summary_text, error_message).
     """
     from .session_core import SESSION_TYPES
@@ -96,7 +143,6 @@ def generate_summary(client_name, session_type, conversation, system_prompt):
         f"{'Client' if m['role'] == 'user' else 'Therapist'}: {m['content']}"
         for m in conversation
     )
-
     type_desc = SESSION_TYPES.get(session_type, "Unknown") if session_type else "Unknown"
 
     summary_prompt = f"""You just completed a Breakthrough Programme therapy session.
@@ -120,28 +166,33 @@ Generate a concise session summary with these sections:
 
 Be honest. If no felt shift occurred, say so. The body is the scoreboard."""
 
+    # 1. Ollama
+    if os.environ.get("OLLAMA_MODEL"):
+        text, err = _ollama_chat("", [], summary_prompt, max_tokens=2048)
+        if text:
+            return text, None
+
+    # 2. Groq
     api_key = os.environ.get("Groq_SB")
     if api_key:
         try:
             client = Groq(api_key=api_key)
             response = client.chat.completions.create(
-                model=MODEL,
+                model=GROQ_MODEL,
                 max_tokens=2048,
                 messages=[{"role": "user", "content": summary_prompt}],
             )
             return response.choices[0].message.content.strip(), None
-        except (AuthenticationError, RateLimitError):
-            pass
         except Exception:
             pass
 
-    # Gemini fallback for summary
+    # 3. Gemini
     try:
         from google import genai
         from google.genai import types
         gemini_key = os.environ.get("Gemini_API_SB")
         if not gemini_key:
-            return None, "Both Groq and Gemini APIs unavailable."
+            return None, "All AI backends unavailable."
         client = genai.Client(api_key=gemini_key)
         response = client.models.generate_content(
             model="gemini-2.0-flash",
