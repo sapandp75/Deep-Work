@@ -98,7 +98,7 @@ def _gemini_chat(system_prompt, messages, user_message, max_tokens=1024):
         contents.append(types.Content(role="user", parts=[types.Part(text=user_message)]))
 
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-pro",
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=system_prompt, max_output_tokens=max_tokens
@@ -195,7 +195,7 @@ Be honest. If no felt shift occurred, say so. The body is the scoreboard."""
             return None, "All AI backends unavailable."
         client = genai.Client(api_key=gemini_key)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-pro",
             contents=summary_prompt,
             config=types.GenerateContentConfig(max_output_tokens=2048),
         )
