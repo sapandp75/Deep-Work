@@ -10,6 +10,7 @@ import re
 import sys
 import time
 import wave
+import copy
 import signal
 import tempfile
 import asyncio
@@ -54,6 +55,7 @@ SESSION_TYPES = {
     "C": "Inner Child / Compassion Session — direct contact with vulnerable part, compassionate dialogue",
     "D": "Micro-Action Debrief + Integration — process real-life experiences, link to body",
     "E": "Somatic Tracking Only — no narrative, no interpretation, just precise body awareness",
+    "F": "Ericksonian Guided Hypnosis / Rescripting — slower guided trance-style rescripting for shame memories and emotional installation",
 }
 
 # Paths
@@ -61,6 +63,28 @@ BASE_DIR = Path(__file__).parent
 SESSIONS_DIR = BASE_DIR / "sessions"
 PROGRAMME_FILE = Path(__file__).parent.parent / "The_Breakthrough_Programme.md"
 KNOWLEDGE_BASE_FILE = Path(__file__).parent.parent / "resources" / "ISTDP_Knowledge_Base.md"
+DEFAULT_SCOREBOARD = {
+    "version": 1,
+    "current_week": "",
+    "sessions": [],
+    "recommended_next_type": None,
+    "recommended_reason": "",
+    "pending_consolidation": False,
+    "consolidation_items": [],
+    "pending_actions": [],
+    "metrics": {
+        "shame_intensity": None,
+        "baseline_intensity": None,
+        "self_abandonment_catches": 0,
+        "breakthrough_carryover": "none",
+        "groundedness_after_session": None,
+    },
+}
+
+def new_scoreboard():
+    board = copy.deepcopy(DEFAULT_SCOREBOARD)
+    board["current_week"] = datetime.now().strftime("%Y-W%W")
+    return board
 
 # ---------------------------------------------------------------------------
 # System Prompt Builder
@@ -118,6 +142,14 @@ CONTEXT_CONFIG = {
         "micro_actions": False,
         "somatic_baseline": False,
         "progress_log": False,
+    },
+    "F": {
+        "programme_sections": ["1", "2", "Tool2", "Tool6", "6"],
+        "kb_sections": [1, 2, 6, 19, 25, 29],
+        "max_sessions": 2,
+        "micro_actions": True,
+        "somatic_baseline": False,
+        "progress_log": True,
     },
     "review": {
         "programme_sections": ["8"],
@@ -289,6 +321,229 @@ def load_progress_log(client_name):
     path = SESSIONS_DIR / client_name / "progress_log.md"
     return path.read_text() if path.exists() else ""
 
+def ensure_tracking_files(client_name):
+    """Ensure all machine and human tracking files exist."""
+    client_dir = SESSIONS_DIR / client_name
+    client_dir.mkdir(parents=True, exist_ok=True)
+
+    files = {
+        "micro_actions.md": (
+            f"# Micro-Actions — {client_name.title()}\n\n"
+            "Prescribed micro-actions for real-world evidence generation. Each action tests a threat prediction and builds the self-trust account.\n\n"
+            "**Status key:** [ ] = pending, [x] = done, [~] = skipped\n\n---\n"
+        ),
+        "daily_actions.md": (
+            f"# Daily Actions — {client_name.title()}\n\n"
+            "Daily real-life change work across micro-actions, behavioural experiments, exposure / re-entry, and vitality.\n\n"
+            "**Status key:** [ ] = pending, [x] = done, [~] = skipped\n\n---\n"
+        ),
+        "consolidation_queue.md": (
+            f"# Consolidation Queue — {client_name.title()}\n\n"
+            "Post-breakthrough tasks that lock a felt shift into body, behaviour, and anti-relapse awareness.\n\n---\n"
+        ),
+        "auto_state.md": (
+            f"# Auto State — {client_name.title()}\n\n"
+            "Machine-generated snapshot read at the start of every session.\n"
+        ),
+    }
+
+    for filename, default_content in files.items():
+        path = client_dir / filename
+        if not path.exists():
+            path.write_text(default_content)
+
+    scoreboard_path = client_dir / "scoreboard.json"
+    if not scoreboard_path.exists():
+        scoreboard = new_scoreboard()
+        scoreboard_path.write_text(json.dumps(scoreboard, indent=2))
+
+def load_scoreboard(client_name):
+    path = SESSIONS_DIR / client_name / "scoreboard.json"
+    if not path.exists():
+        ensure_tracking_files(client_name)
+    try:
+        return json.loads(path.read_text())
+    except Exception:
+        return new_scoreboard()
+
+def save_scoreboard(client_name, scoreboard):
+    path = SESSIONS_DIR / client_name / "scoreboard.json"
+    path.write_text(json.dumps(scoreboard, indent=2))
+
+def unique_pending_action_dicts(actions):
+    seen = set()
+    result = []
+    for action in actions:
+        text = action.get("text", "")
+        norm = normalize_action_text(text)
+        if norm and norm not in seen:
+            seen.add(norm)
+            result.append(action)
+    return result
+
+def load_auto_state(client_name):
+    path = SESSIONS_DIR / client_name / "auto_state.md"
+    return path.read_text() if path.exists() else ""
+
+def load_daily_actions(client_name):
+    path = SESSIONS_DIR / client_name / "daily_actions.md"
+    return path.read_text() if path.exists() else ""
+
+def load_consolidation_queue(client_name):
+    path = SESSIONS_DIR / client_name / "consolidation_queue.md"
+    return path.read_text() if path.exists() else ""
+
+def current_week_key(now=None):
+    now = now or datetime.now()
+    return now.strftime("%Y-W%W")
+
+def sessions_done_today(client_name):
+    today = datetime.now().strftime("%Y-%m-%d")
+    client_dir = SESSIONS_DIR / client_name
+    if not client_dir.exists():
+        return 0
+    return len(list(client_dir.glob(f"{today}_session_*.md")))
+
+def extract_summary_field(summary, field_prefix):
+    for line in summary.split("\n"):
+        if line.upper().startswith(field_prefix.upper()):
+            return line.split(":", 1)[-1].strip()
+    return ""
+
+def extract_machine_data(summary):
+    """Extract machine-readable JSON payload from summary if present."""
+    marker = "## MACHINE DATA"
+    idx = summary.find(marker)
+    if idx == -1:
+        return {}
+    payload = summary[idx + len(marker):].strip()
+    if payload.startswith("```json"):
+        payload = payload[len("```json"):].strip()
+    elif payload.startswith("```"):
+        payload = payload[len("```"):].strip()
+    if payload.endswith("```"):
+        payload = payload[:-3].strip()
+    try:
+        return json.loads(payload)
+    except Exception:
+        return {}
+
+def machine_data_is_valid(data):
+    if not isinstance(data, dict) or not data:
+        return False
+    rec = data.get("recommended_next_type")
+    if rec is not None and rec not in SESSION_TYPES:
+        return False
+    if "micro_actions" in data and not isinstance(data.get("micro_actions"), list):
+        return False
+    if "daily_actions" in data and not isinstance(data.get("daily_actions"), dict):
+        return False
+    return True
+
+def normalize_action_text(action):
+    return re.sub(r"\s+", " ", action.strip().lower())
+
+def dedupe_actions(existing_text, new_actions):
+    existing_norm = set()
+    for line in existing_text.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith(("- [ ]", "- [x]", "- [~]")):
+            existing_norm.add(normalize_action_text(stripped[6:].strip()))
+    deduped = []
+    seen = set()
+    for action in new_actions:
+        norm = normalize_action_text(action)
+        if norm and norm not in existing_norm and norm not in seen:
+            seen.add(norm)
+            deduped.append(action)
+    return deduped
+
+def parse_recommended_type_from_summary(summary):
+    data = extract_machine_data(summary)
+    rec = data.get("recommended_next_type")
+    if rec in SESSION_TYPES:
+        return rec
+    for line in summary.split("\n"):
+        upper = line.upper()
+        if "RECOMMENDED NEXT SESSION TYPE" in upper:
+            match = re.search(r"RECOMMENDED NEXT SESSION TYPE\s*:\s*([A-F])\b", upper)
+            if match:
+                return match.group(1)
+    return None
+
+def parse_action_lines_from_summary(summary):
+    data = extract_machine_data(summary)
+    if data.get("micro_actions"):
+        return [a for a in data.get("micro_actions", []) if a]
+    actions = []
+    lines = summary.split("\n")
+    in_actions = False
+    for line in lines:
+        upper = line.upper().strip()
+        if upper.startswith("11. MICRO-ACTIONS") or upper.startswith("11. MICRO ACTIONS") or upper == "MICRO-ACTIONS" or upper == "MICRO ACTIONS":
+            in_actions = True
+            continue
+        if in_actions:
+            if not line.strip():
+                if actions:
+                    break
+                continue
+            if re.match(r"^\s*(12\.|THREAD|RECOMMENDED NEXT SESSION TYPE)", upper):
+                break
+            if line.strip().startswith(("1.", "2.", "3.", "-", "*")):
+                action = line.strip().lstrip("0123456789.-*) ").strip()
+                if action:
+                    actions.append(action)
+    return actions
+
+def parse_shift_detected(summary):
+    data = extract_machine_data(summary)
+    if "felt_shift" in data:
+        return bool(data.get("felt_shift"))
+    upper = summary.upper()
+    return "FELT SHIFT" in upper and "YES" in upper
+
+def parse_carryover_hint(summary):
+    data = extract_machine_data(summary)
+    if data.get("breakthrough_carryover"):
+        return data["breakthrough_carryover"]
+    upper = summary.upper()
+    if "24H" in upper or "24 HOURS" in upper:
+        return "24h"
+    if "48H" in upper or "48 HOURS" in upper:
+        return "48h"
+    return "none"
+
+def backfill_scoreboard_from_history(client_name):
+    """Seed scoreboard from historical session files if empty."""
+    scoreboard = load_scoreboard(client_name)
+    if scoreboard.get("sessions"):
+        return scoreboard
+    client_dir = SESSIONS_DIR / client_name
+    if not client_dir.exists():
+        return scoreboard
+    for session_file in sorted(client_dir.glob("*_session_*.md")):
+        content = session_file.read_text()
+        date_match = re.search(r"\*\*Date:\*\*\s*(\d{4}-\d{2}-\d{2})", content)
+        type_match = re.search(r"\*\*Session Type:\*\*\s*([A-F])", content)
+        if not date_match or not type_match:
+            continue
+        date_str = date_match.group(1)
+        sess_type = type_match.group(1)
+        week = datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y-W%W")
+        felt_shift = "FELT SHIFT" in content.upper() and "YES" in content.upper()
+        scoreboard.setdefault("sessions", []).append({
+            "date": date_str,
+            "type": sess_type,
+            "week": week,
+            "recommended_type": None,
+            "override_reason": None,
+            "felt_shift": felt_shift,
+        })
+    scoreboard["sessions"] = scoreboard.get("sessions", [])[-30:]
+    save_scoreboard(client_name, scoreboard)
+    return scoreboard
+
 def extract_thread_from_last_session(client_name):
     """Extract the 'THREAD FOR NEXT SESSION' from the most recent session summary,
     plus the last 3 exchanges of the actual transcript."""
@@ -384,19 +639,31 @@ def extract_recommended_type(client_name):
         upper = line.upper()
         if "RECOMMEND" in upper and "SESSION TYPE" in upper:
             # Extract A-E from the line
-            for char in "ABCDE":
+            for char in "ABCDEF":
                 if f"TYPE {char}" in upper or f": {char}" in upper or f"({char})" in upper or line.strip().endswith(char):
                     return char
     return None
 
-
-def select_session_type(client_name):
-    """Use AI to select the best session type based on full therapeutic context."""
+def recommend_session_type(client_name):
+    """Use AI plus structured tracking to recommend the best next session type."""
+    ensure_tracking_files(client_name)
+    backfill_scoreboard_from_history(client_name)
     recent_types = get_recent_session_types(client_name)
     summaries = load_all_session_summaries(client_name, max_sessions=5)
     micro_actions = load_micro_actions(client_name)
     progress_log = load_recent_progress_log(client_name)
     thread = extract_thread_from_last_session(client_name)
+    auto_state = load_auto_state(client_name)
+    daily_actions = load_daily_actions(client_name)
+    consolidation = load_consolidation_queue(client_name)
+    scoreboard = load_scoreboard(client_name)
+    today_sessions = sessions_done_today(client_name)
+
+    week = current_week_key()
+    deep_count = 0
+    for sess in scoreboard.get("sessions", []):
+        if sess.get("week") == week and sess.get("type") in {"A", "B", "C", "F"}:
+            deep_count += 1
 
     type_descriptions = "\n".join(f"  {k}: {v}" for k, v in SESSION_TYPES.items())
     recent_str = ", ".join(recent_types) if recent_types else "None"
@@ -407,6 +674,8 @@ SESSION TYPES:
 {type_descriptions}
 
 RECENT SESSION TYPES (most recent first): {recent_str}
+SESSIONS DONE TODAY: {today_sessions}
+DEEP SESSIONS THIS WEEK (A/B/C/F): {deep_count}
 
 RECENT SESSION SUMMARIES:
 {summaries if summaries else "(No summaries available)"}
@@ -420,33 +689,48 @@ PROGRESS LOG:
 UNFINISHED THREAD FROM LAST SESSION:
 {thread if thread else "(None)"}
 
-SELECTION CRITERIA (in priority order):
-1. If there are pending micro-actions that haven't been debriefed → Type D
-2. If the last 3+ sessions were all the same type → pick a DIFFERENT type
-3. If the last session had deep emotional material that needs integration → Type D or E
-4. If the last session recommended a specific next type → honor it
-5. If no somatic tracking has been done recently → Type E
-6. If inner child work was started but not completed → Type C
-7. If core transformation would serve the current thread → Type B
-8. If pressure work is needed for new material → Type A
+AUTO STATE:
+{auto_state if auto_state else "(None)"}
 
-RESPOND WITH EXACTLY ONE LETTER: A, B, C, D, or E. Nothing else."""
+DAILY ACTIONS:
+{daily_actions if daily_actions else "(None)"}
+
+CONSOLIDATION QUEUE:
+{consolidation if consolidation else "(None)"}
+
+SELECTION CRITERIA (in priority order):
+1. If there is pending consolidation from a breakthrough → Type D or E. Use F if a shame memory or rescripting thread is clearly active.
+2. If there are pending micro-actions, behavioural experiments, exposures, or re-entry tasks that haven't been debriefed → Type D
+3. If deep sessions this week are already 3 or more → strongly prefer D or E, not A/B/C/F
+4. If the last 2+ sessions were all the same type → pick a DIFFERENT type unless the unfinished thread clearly requires continuation
+5. If the last session recommended a specific next type → honor it unless higher-priority criteria override it
+6. If no somatic tracking has been done recently or the client is flat / exhausted / foggy → Type E
+7. If a specific shame memory, mother-aggression scene, or repeated wound needs slower installation → Type F
+8. If inner child work was started but not completed → Type C
+9. If core transformation would serve the current thread → Type B
+10. If pressure work is needed for new material and capacity is present → Type A
+
+Respond in exactly two lines:
+TYPE: <one letter A-F>
+REASON: <one concise sentence>"""
 
     try:
         result = subprocess.run(
             ["claude", "-p", selection_prompt],
             capture_output=True, text=True, timeout=30
         )
-        response = result.stdout.strip().upper()
-        # Extract the letter from response
-        for char in "ABCDE":
-            if char in response:
-                print(f"  AI selected session type: {char}")
-                return char
+        response = result.stdout.strip()
+        match = re.search(r"TYPE:\s*([A-F])", response, re.IGNORECASE)
+        reason_match = re.search(r"REASON:\s*(.+)", response, re.IGNORECASE)
+        if match:
+            rec_type = match.group(1).upper()
+            reason = reason_match.group(1).strip() if reason_match else "Best fit based on recent sessions and pending work."
+            print(f"  AI recommended session type: {rec_type}")
+            return {"type": rec_type, "reason": reason}
     except Exception as e:
         print(f"  Session type selection fallback (AI error: {e})")
 
-    # Fallback: least-used rotation
+    # Fallback: least-used rotation with consolidation bias
     type_keys = list(SESSION_TYPES.keys())
     usage = {t: 0 for t in type_keys}
     for t in recent_types:
@@ -457,7 +741,12 @@ RESPOND WITH EXACTLY ONE LETTER: A, B, C, D, or E. Nothing else."""
     if not candidates:
         candidates = type_keys
     candidates.sort(key=lambda t: usage[t])
-    return candidates[0]
+    fallback = "D" if scoreboard.get("pending_consolidation") else candidates[0]
+    return {"type": fallback, "reason": "Fallback recommendation based on recent usage and consolidation state."}
+
+def select_session_type(client_name):
+    """Backward-compatible selector returning only the recommended type."""
+    return recommend_session_type(client_name)["type"]
 
 def build_system_prompt(client_name, session_type=None, mode="session"):
     """Build a context-efficient system prompt matched to the session type."""
@@ -487,6 +776,10 @@ def build_system_prompt(client_name, session_type=None, mode="session"):
     micro_actions = load_micro_actions(client_name) if cfg["micro_actions"] else ""
     somatic_baseline = load_somatic_baseline(client_name) if cfg["somatic_baseline"] else ""
     progress_log = load_recent_progress_log(client_name) if cfg["progress_log"] else ""
+    auto_state = load_auto_state(client_name) if mode == "session" else ""
+    daily_actions = load_daily_actions(client_name) if mode in ("session", "review", "checkin") else ""
+    consolidation_queue = load_consolidation_queue(client_name) if mode in ("session", "review") else ""
+    scoreboard = json.dumps(load_scoreboard(client_name), indent=2) if mode in ("session", "review") else ""
 
     # --- Assemble ---
     prompt = "You are running a live Breakthrough Programme therapy session.\n\n"
@@ -512,6 +805,18 @@ def build_system_prompt(client_name, session_type=None, mode="session"):
 
     if progress_log:
         prompt += f"=== PROGRESS LOG (last 7 days) ===\n{progress_log}\n=== END PROGRESS LOG ===\n\n"
+
+    if auto_state:
+        prompt += f"=== AUTO STATE ===\n{auto_state}\n=== END AUTO STATE ===\n\n"
+
+    if daily_actions:
+        prompt += f"=== DAILY ACTIONS ===\n{daily_actions}\n=== END DAILY ACTIONS ===\n\n"
+
+    if consolidation_queue:
+        prompt += f"=== CONSOLIDATION QUEUE ===\n{consolidation_queue}\n=== END CONSOLIDATION QUEUE ===\n\n"
+
+    if scoreboard:
+        prompt += f"=== STRUCTURED SCOREBOARD ===\n{scoreboard}\n=== END STRUCTURED SCOREBOARD ===\n\n"
 
     # Unfinished thread from last session
     if mode == "session":
@@ -698,6 +1003,43 @@ PACING: Very slow. Long silences between questions. No rush. "Take your time. Th
 
 END: "Before we finish — do one final scan, head to feet. What's different now compared to when we started? Not what you think is different — what you feel is different."
 """,
+                "F": """ERICKSONIAN GUIDED HYPNOSIS / RESCRIPTING SESSION — CLINICAL INSTRUCTIONS:
+
+This is a slower, guided, trance-style session for emotional installation and shame-memory updating. Minimum target arc: 20 minutes. Keep the pacing slower, more sensory, and more immersive than normal sessions.
+
+WHEN TO USE:
+- A known wound keeps repeating without lasting installation
+- A shame memory, humiliation memory, or maternal aggression scene is clearly active
+- The client says "I understand it but I can't feel it"
+- Pressure has reached the layer, but not changed the learning
+
+OPENING:
+Slow everything down. Use breath, sensory tracking, and permissive language. Help attention settle into body and scene at the same time.
+
+METHOD:
+1. Access a specific scene, not a theory.
+2. Make it sensory and present-tense: what is seen, heard, felt in the body?
+3. Track the emotional meaning of the scene.
+4. Bring in the adult self, therapist, or protective intervention only after the emotional truth is live.
+5. Rescript what was missing: protection, boundary, validation, truth, interruption of abuse, permission to feel.
+6. Install the new learning in the body: "What changes in your chest now? What does the younger part know now that he didn't know then?"
+
+STYLE GUIDELINES:
+- Use indirect, permissive language: "you may notice", "something in you might begin to", "and as that scene becomes clearer"
+- Use metaphor only if it deepens contact
+- Long pauses are useful
+- Keep attention moving between scene and present-body so the client stays anchored
+
+SAFETY:
+- If fogginess, flattening, or dissociation rises, stop the rescripting and ground immediately
+- If the scene stays conceptual, do not force it. Return to body and choose a simpler target
+
+ENDING:
+Do not end with theory. End with:
+- the body marker of the shift
+- the new sentence that is true now
+- one concrete real-life act within 24 hours that expresses the new learning
+""",
             }
             prompt += f"""=== SESSION TYPE: {session_type} ===
 Today's session type: {SESSION_TYPES[session_type]}
@@ -758,6 +1100,8 @@ Before closing, you MUST assign 2-3 specific micro-actions and STATE THEM ALOUD.
 
 END-OF-SESSION REALITY CHECK:
 When the client reports "peace" or "lightness" at the end, test it: "That peace you're feeling — is that a resolution, or is that relief that we're stopping?" Do not validate end-of-session peace as transformation unless there is genuine somatic evidence of shift (changed sensation, different body posture, specific new felt sense that wasn't there before).
+- If a real felt shift lands, stop digging and move to consolidation rather than more excavation.
+- Every deep session (A/B/C/F) must end with: one body marker, one real-life proof action, and one anti-relapse warning.
 === END INSTRUCTIONS ==="""
 
     return prompt
@@ -1005,12 +1349,15 @@ def get_claude_response(system_prompt, conversation, user_message, model="claude
 # ---------------------------------------------------------------------------
 
 class Session:
-    def __init__(self, client_name, session_type=None, mode="session", model="claude"):
+    def __init__(self, client_name, session_type=None, mode="session", model="claude", recommendation=None, override_reason=None):
         self.client_name = client_name
         self.client_dir = SESSIONS_DIR / client_name
         self.client_dir.mkdir(parents=True, exist_ok=True)
+        ensure_tracking_files(client_name)
         self.mode = mode
         self.model = model
+        self.recommendation = recommendation or recommend_session_type(client_name)
+        self.override_reason = override_reason
 
         self.start_time = datetime.now()
         self.conversation = []  # list of (role, message) tuples
@@ -1021,13 +1368,18 @@ class Session:
             self.session_type = None
         else:
             self.session_number = self._next_session_number()
-            self.session_type = session_type or select_session_type(client_name)
+            self.recommended_type = self.recommendation.get("type")
+            self.recommended_reason = self.recommendation.get("reason", "")
+            # Priority: 1) user-confirmed type, 2) current recommendation, 3) last session's recommendation
+            self.session_type = session_type or self.recommended_type or extract_recommended_type(client_name) or select_session_type(client_name)
             self.session_file = self.client_dir / (
                 f"{self.start_time.strftime('%Y-%m-%d')}"
                 f"_session_{self.session_number:02d}.md"
             )
 
         self.system_prompt = build_system_prompt(client_name, self.session_type, mode)
+        if mode == "session":
+            self._rebuild_auto_state()
 
     def _next_session_number(self):
         """Determine session number for today."""
@@ -1113,6 +1465,9 @@ class Session:
 
         summary_prompt = f"""You just completed a Breakthrough Programme therapy session.
 Session type: {self.session_type} — {SESSION_TYPES.get(self.session_type, 'Unknown')}
+Recommended type at session start: {getattr(self, 'recommended_type', None)}
+Recommendation rationale: {getattr(self, 'recommended_reason', '')}
+Override reason (if any): {self.override_reason or "None"}
 
 Here is the full transcript:
 {transcript}
@@ -1129,8 +1484,30 @@ Generate a concise session summary with these sections:
 9. SHAME ACCESSED (Y/N + context if yes)
 10. TRIANGLE-OF-CONFLICT CODING (for each key exchange in the session, code what the intervention landed on: F=feeling, A=anxiety, D=defence; note whether UTA appeared to rise or fall; e.g. "Exchange 3: D→pressed isolation of affect, UTA rose — patient softened")
 11. MICRO-ACTIONS (assign 2-3 specific actions for the coming days — specific, calibrated, tied to core wound)
-12. THREAD FOR NEXT SESSION (what to follow up on)
-13. RECOMMENDED NEXT SESSION TYPE (A/B/C/D/E based on what emerged)
+12. DAILY ACTIONS (include: behavioural experiment, exposure or re-entry step, vitality action if relevant)
+13. BODY MARKER (the specific felt marker of the shift, or "none")
+14. ANTI-RELAPSE WARNING (what the Protector / state-chasing pattern will likely do next)
+15. THREAD FOR NEXT SESSION (what to follow up on)
+16. RECOMMENDED NEXT SESSION TYPE (A/B/C/D/E/F based on what emerged)
+
+Then add a final section exactly like this:
+## MACHINE DATA
+```json
+{
+  "recommended_next_type": "D",
+  "felt_shift": false,
+  "body_marker": "none",
+  "anti_relapse_warning": "short sentence",
+  "micro_actions": ["action 1", "action 2"],
+  "daily_actions": {
+    "behavioural_experiments": ["..."],
+    "exposure_reentry": ["..."],
+    "vitality": ["..."]
+  },
+  "thread_for_next_session": "short sentence",
+  "summary_status": "ok"
+}
+```
 
 Be honest. If no felt shift occurred, say so. The body is the scoreboard."""
 
@@ -1140,6 +1517,16 @@ Be honest. If no felt shift occurred, say so. The body is the scoreboard."""
                 capture_output=True, text=True, timeout=120
             )
             summary = result.stdout.strip()
+            data = extract_machine_data(summary)
+            if not machine_data_is_valid(data):
+                retry_prompt = summary_prompt + "\n\nYour previous response was missing or malformed in the MACHINE DATA JSON block. Regenerate the full summary and ensure the MACHINE DATA block is valid JSON."
+                retry = subprocess.run(
+                    ["claude", "-p", retry_prompt],
+                    capture_output=True, text=True, timeout=120
+                )
+                retry_summary = retry.stdout.strip()
+                if machine_data_is_valid(extract_machine_data(retry_summary)):
+                    summary = retry_summary
         except Exception:
             summary = "(Summary generation failed — review transcript manually)"
 
@@ -1160,6 +1547,10 @@ Be honest. If no felt shift occurred, say so. The body is the scoreboard."""
 
         # Update micro-actions from summary
         self._update_micro_actions(summary)
+        self._update_daily_actions(summary)
+        self._update_consolidation(summary)
+        self._update_scoreboard(summary)
+        self._rebuild_auto_state(summary)
 
         print(f"\n  📝 Session saved: {self.session_file}")
         return summary
@@ -1180,38 +1571,160 @@ Be honest. If no felt shift occurred, say so. The body is the scoreboard."""
 
     def _update_micro_actions(self, summary):
         """Extract and log any new micro-actions from session summary."""
-        # The summary contains micro-actions in section 9
-        # We append any new actions to the micro_actions file
         actions_path = self.client_dir / "micro_actions.md"
+        actions = parse_action_lines_from_summary(summary)
+        if not actions:
+            return
+        existing = actions_path.read_text() if actions_path.exists() else (
+            f"# Micro-Actions — {self.client_name.title()}\n\nPrescribed micro-actions for real-world evidence generation. Each action tests a threat prediction and builds the self-trust account.\n\n**Status key:** [ ] = pending, [x] = done, [~] = skipped\n\n---\n"
+        )
+        actions = dedupe_actions(existing, actions)
+        if not actions:
+            return
+        entry = f"\n### Assigned {self.start_time.strftime('%Y-%m-%d')} (Session {self.session_number})\n\n"
+        for action in actions:
+            entry += f"- [ ] {action}\n"
+        entry += "\n"
+        actions_path.write_text(existing + entry)
 
-        if "MICRO-ACTIONS" in summary or "MICRO ACTIONS" in summary:
-            entry = f"\n### Assigned {self.start_time.strftime('%Y-%m-%d')} (Session {self.session_number})\n\n"
-            # Extract the micro-actions section
-            lines = summary.split("\n")
-            in_section = False
-            for line in lines:
-                if "MICRO-ACTION" in line.upper() or "MICRO ACTION" in line.upper():
-                    in_section = True
-                    continue
-                if in_section:
-                    if line.strip().startswith(("1.", "2.", "3.", "-", "*")):
-                        entry += f"- [ ] {line.strip().lstrip('0123456789.-*) ')}\n"
-                    elif line.strip() and any(line.strip().startswith(str(i)) for i in range(10)):
-                        # Numbered items without period
-                        entry += f"- [ ] {line.strip().lstrip('0123456789.-*) ')}\n"
-                    elif line.strip() == "" and entry.count("[ ]") > 0:
-                        break
-                    elif line.strip().startswith(("#", "THREAD", "RECOMMEND", "SESSION")):
-                        break
+    def _update_daily_actions(self, summary):
+        """Append broader daily-action tracking items from the summary."""
+        data = extract_machine_data(summary)
+        actions = parse_action_lines_from_summary(summary)
+        daily_path = self.client_dir / "daily_actions.md"
+        existing = daily_path.read_text() if daily_path.exists() else (
+            f"# Daily Actions — {self.client_name.title()}\n\n"
+            "Daily real-life change work across micro-actions, behavioural experiments, exposure / re-entry, and vitality.\n\n"
+            "**Status key:** [ ] = pending, [x] = done, [~] = skipped\n\n---\n"
+        )
+        entry = f"\n### Assigned {self.start_time.strftime('%Y-%m-%d')} (Session {self.session_number}, Type {self.session_type})\n\n"
+        wrote = False
 
-            if "[ ]" in entry:
-                entry += "\n"
-                if actions_path.exists():
-                    existing = actions_path.read_text()
-                    actions_path.write_text(existing + entry)
-                else:
-                    header = f"# Micro-Actions — {self.client_name.title()}\n\nPrescribed micro-actions for real-world evidence generation. Each action tests a threat prediction and builds the self-trust account.\n\n**Status key:** [ ] = pending, [x] = done, [~] = skipped\n\n---\n"
-                    actions_path.write_text(header + entry)
+        micro_actions = dedupe_actions(existing, actions)
+        if micro_actions:
+            wrote = True
+            entry += "#### Micro-Actions\n"
+            for action in micro_actions:
+                entry += f"- [ ] {action}\n"
+
+        daily_actions = data.get("daily_actions", {})
+        sections = [
+            ("#### Behavioural Experiments", dedupe_actions(existing, daily_actions.get("behavioural_experiments", []))),
+            ("#### Exposure / Re-entry", dedupe_actions(existing, daily_actions.get("exposure_reentry", []))),
+            ("#### Vitality", dedupe_actions(existing, daily_actions.get("vitality", []))),
+        ]
+        for header, items in sections:
+            if items:
+                wrote = True
+                entry += f"\n{header}\n"
+                for item in items:
+                    entry += f"- [ ] {item}\n"
+        if wrote:
+            daily_path.write_text(existing + entry + "\n")
+
+    def _update_consolidation(self, summary):
+        """Queue consolidation after real felt shifts."""
+        if not parse_shift_detected(summary):
+            return
+        path = self.client_dir / "consolidation_queue.md"
+        body_marker = extract_summary_field(summary, "13. BODY MARKER") or extract_summary_field(summary, "BODY MARKER")
+        anti_relapse = extract_summary_field(summary, "14. ANTI-RELAPSE WARNING") or extract_summary_field(summary, "ANTI-RELAPSE WARNING")
+        actions = parse_action_lines_from_summary(summary)
+        body_action = actions[0] if actions else "Debrief one real-life proof action within 24 hours."
+        entry = (
+            f"\n### {self.start_time.strftime('%Y-%m-%d')} — Session {self.session_number} (Type {self.session_type})\n\n"
+            f"- [ ] **Body anchor:** {body_marker or 'Identify the felt marker of the shift.'}\n"
+            f"- [ ] **Behavioural proof:** {body_action}\n"
+            f"- [ ] **Anti-relapse warning:** {anti_relapse or 'Watch for meaning-making, state-chasing, or project absorption.'}\n\n"
+        )
+        existing = path.read_text() if path.exists() else f"# Consolidation Queue — {self.client_name.title()}\n\nPost-breakthrough tasks that lock a felt shift into body, behaviour, and anti-relapse awareness.\n\n---\n"
+        path.write_text(existing + entry)
+
+    def _update_scoreboard(self, summary):
+        scoreboard = load_scoreboard(self.client_name)
+        data = extract_machine_data(summary)
+        week = current_week_key(self.start_time)
+        scoreboard["current_week"] = week
+        recommended_next = data.get("recommended_next_type") or parse_recommended_type_from_summary(summary)
+        scoreboard["recommended_next_type"] = recommended_next
+        scoreboard["recommended_reason"] = data.get("thread_for_next_session") or extract_summary_field(summary, "15. THREAD FOR NEXT SESSION") or extract_summary_field(summary, "THREAD FOR NEXT SESSION")
+        scoreboard["pending_consolidation"] = parse_shift_detected(summary)
+        scoreboard["metrics"]["breakthrough_carryover"] = parse_carryover_hint(summary)
+        scoreboard["summary_status"] = data.get("summary_status", "fallback")
+        session_record = {
+            "date": self.start_time.strftime("%Y-%m-%d"),
+            "type": self.session_type,
+            "week": week,
+            "recommended_type": getattr(self, "recommended_type", None),
+            "override_reason": self.override_reason,
+            "felt_shift": parse_shift_detected(summary),
+        }
+        scoreboard.setdefault("sessions", []).append(session_record)
+        scoreboard["sessions"] = scoreboard["sessions"][-30:]
+        pending_actions = [{"text": action, "status": "pending", "assigned": self.start_time.strftime("%Y-%m-%d")} for action in parse_action_lines_from_summary(summary)]
+        existing_pending = scoreboard.get("pending_actions", [])
+        if pending_actions:
+            scoreboard["pending_actions"] = unique_pending_action_dicts(existing_pending + pending_actions)
+        else:
+            scoreboard["pending_actions"] = unique_pending_action_dicts(existing_pending)
+        consolidation_items = []
+        if scoreboard["pending_consolidation"]:
+            body_marker = extract_summary_field(summary, "13. BODY MARKER") or extract_summary_field(summary, "BODY MARKER")
+            anti_relapse = extract_summary_field(summary, "14. ANTI-RELAPSE WARNING") or extract_summary_field(summary, "ANTI-RELAPSE WARNING")
+            consolidation_items = [
+                {"kind": "body_anchor", "text": body_marker or "Identify the felt marker of the shift.", "status": "pending"},
+                {"kind": "anti_relapse", "text": anti_relapse or "Watch for meaning-making, state-chasing, or project absorption.", "status": "pending"},
+            ]
+        scoreboard["consolidation_items"] = consolidation_items
+        save_scoreboard(self.client_name, scoreboard)
+
+    def _rebuild_auto_state(self, summary=None):
+        scoreboard = load_scoreboard(self.client_name)
+        auto_path = self.client_dir / "auto_state.md"
+        queue = load_consolidation_queue(self.client_name)
+        daily = load_daily_actions(self.client_name)
+        recent_summary = summary or ""
+        lines = [
+            f"# Auto State — {self.client_name.title()}",
+            "",
+            f"## Today",
+            f"- Sessions done today: {sessions_done_today(self.client_name)}",
+            f"- Current week: {scoreboard.get('current_week', current_week_key())}",
+            "",
+            "## Last Session",
+            f"- Date: {self.start_time.strftime('%Y-%m-%d') if summary else 'See latest session file'}",
+            f"- Type: {self.session_type if summary else 'Unknown'}",
+            f"- Felt shift landed: {'Yes' if scoreboard.get('pending_consolidation') else 'No / not yet consolidated'}",
+            "",
+            "## Recommendation",
+            f"- Recommended next type: {scoreboard.get('recommended_next_type') or 'TBD'}",
+            f"- Why: {scoreboard.get('recommended_reason') or 'Review latest thread, pending actions, and consolidation state.'}",
+            "",
+            "## Consolidation",
+            f"- Pending consolidation: {'Yes' if scoreboard.get('pending_consolidation') else 'No'}",
+            "",
+            "## Pending Actions",
+        ]
+        for item in scoreboard.get("pending_actions", [])[:5]:
+            lines.append(f"- [ ] {item.get('text')}")
+        if not scoreboard.get("pending_actions"):
+            lines.append("- None")
+        lines.extend([
+            "",
+            "## Active Relapse Risk",
+            f"- {extract_summary_field(recent_summary, '14. ANTI-RELAPSE WARNING') or 'Meaning-making, state-chasing, or project absorption may reappear.'}",
+            "",
+            "## State Quality",
+            f"- Summary status: {scoreboard.get('summary_status', 'unknown')}",
+            "",
+            "## Thread For Next Session",
+            f"- {extract_summary_field(recent_summary, '15. THREAD FOR NEXT SESSION') or 'See latest session summary and transcript tail.'}",
+            "",
+            "## References",
+            f"- Consolidation queue file present: {'Yes' if queue.strip() else 'No'}",
+            f"- Daily actions file present: {'Yes' if daily.strip() else 'No'}",
+        ])
+        auto_path.write_text("\n".join(lines) + "\n")
 
 # ---------------------------------------------------------------------------
 # Weekly Review Generation
@@ -1240,6 +1753,14 @@ def generate_weekly_review(client_name):
     baseline_path = client_dir / "somatic_baseline.md"
     if baseline_path.exists():
         week_content.append(f"=== Somatic Baseline ===\n{baseline_path.read_text()}")
+
+    daily_path = client_dir / "daily_actions.md"
+    if daily_path.exists():
+        week_content.append(f"=== Daily Actions ===\n{daily_path.read_text()}")
+
+    consolidation_path = client_dir / "consolidation_queue.md"
+    if consolidation_path.exists():
+        week_content.append(f"=== Consolidation Queue ===\n{consolidation_path.read_text()}")
 
     if not week_content:
         print("  No sessions found for the past week.")
@@ -1316,6 +1837,30 @@ def print_banner(client_name, session_number, session_type=None, mode="session")
         print("  Say 'end session' to close and save.")
         print("  Press Ctrl+C to emergency stop (still saves).")
     print("=" * 60)
+
+def confirm_session_type(client_name, recommendation):
+    """Recommend a session type, push back once on override, then let the client decide."""
+    rec_type = recommendation["type"]
+    reason = recommendation.get("reason", "")
+    print(f"\n  Recommended next session type: {rec_type} — {SESSION_TYPES.get(rec_type, 'Unknown')}")
+    if reason:
+        print(f"  Why: {reason}")
+    print("  Press Enter to accept, or type A-F to override.")
+    choice = input("  Session type> ").strip().upper()
+    if not choice:
+        return rec_type, None
+    if choice not in SESSION_TYPES:
+        print("  Invalid choice. Using recommended type.")
+        return rec_type, None
+    if choice == rec_type:
+        return rec_type, None
+
+    print(f"\n  Pushback: the engine recommends {rec_type} because {reason}")
+    print("  If you still want to override, type the same letter again. Otherwise press Enter to accept recommendation.")
+    confirm = input("  Confirm override> ").strip().upper()
+    if confirm == choice:
+        return choice, f"Client overrode engine recommendation {rec_type} in favor of {choice}."
+    return rec_type, None
 
 def run_text_mode(session):
     """Fallback text mode if audio has issues."""
@@ -1494,7 +2039,7 @@ def main():
                         help="Generate weekly review")
     parser.add_argument("--session-type", "-s", default=None,
                         choices=list(SESSION_TYPES.keys()),
-                        help="Force a specific session type (A-E)")
+                        help="Force a specific session type (A-F)")
     parser.add_argument("--model", "-m", default="claude",
                         choices=["claude", "ollama-r1:8b", "ollama-r1:14b", "ollama-r1:32b", "ollama-llama3.1:8b"],
                         help="AI model to use (default: claude)")
@@ -1536,7 +2081,21 @@ def main():
         return
 
     # Full session mode
-    session = Session(args.client, session_type=args.session_type, model=args.model)
+    recommendation = recommend_session_type(args.client)
+    selected_type = args.session_type
+    override_reason = None
+    if not selected_type:
+        try:
+            selected_type, override_reason = confirm_session_type(args.client, recommendation)
+        except EOFError:
+            selected_type = recommendation["type"]
+    session = Session(
+        args.client,
+        session_type=selected_type,
+        model=args.model,
+        recommendation=recommendation,
+        override_reason=override_reason,
+    )
     print_banner(args.client, session.session_number, session.session_type)
 
     # Handle graceful shutdown

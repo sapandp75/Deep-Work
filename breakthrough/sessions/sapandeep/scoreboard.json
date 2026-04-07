@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "current_week": "2026-W14",
+  "sessions": [
+    {
+      "date": "2026-03-29",
+      "type": "A",
+      "week": "2026-W12",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": false
+    },
+    {
+      "date": "2026-03-29",
+      "type": "A",
+      "week": "2026-W12",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": false
+    },
+    {
+      "date": "2026-03-29",
+      "type": "A",
+      "week": "2026-W12",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": true
+    },
+    {
+      "date": "2026-03-29",
+      "type": "A",
+      "week": "2026-W12",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": false
+    },
+    {
+      "date": "2026-03-30",
+      "type": "A",
+      "week": "2026-W13",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": false
+    },
+    {
+      "date": "2026-03-30",
+      "type": "A",
+      "week": "2026-W13",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": false
+    },
+    {
+      "date": "2026-03-30",
+      "type": "A",
+      "week": "2026-W13",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": false
+    },
+    {
+      "date": "2026-03-30",
+      "type": "A",
+      "week": "2026-W13",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": false
+    },
+    {
+      "date": "2026-03-31",
+      "type": "A",
+      "week": "2026-W13",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": false
+    },
+    {
+      "date": "2026-04-01",
+      "type": "A",
+      "week": "2026-W13",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": true
+    },
+    {
+      "date": "2026-04-03",
+      "type": "A",
+      "week": "2026-W13",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": false
+    },
+    {
+      "date": "2026-04-03",
+      "type": "A",
+      "week": "2026-W13",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": false
+    },
+    {
+      "date": "2026-04-03",
+      "type": "A",
+      "week": "2026-W13",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": true
+    },
+    {
+      "date": "2026-04-04",
+      "type": "A",
+      "week": "2026-W13",
+      "recommended_type": null,
+      "override_reason": null,
+      "felt_shift": false
+    }
+  ],
+  "recommended_next_type": null,
+  "recommended_reason": "",
+  "pending_consolidation": false,
+  "consolidation_items": [],
+  "pending_actions": [],
+  "metrics": {
+    "shame_intensity": null,
+    "baseline_intensity": null,
+    "self_abandonment_catches": 0,
+    "breakthrough_carryover": "none",
+    "groundedness_after_session": null
+  }
+}
