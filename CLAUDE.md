@@ -7,6 +7,24 @@
 - Reading files and researching the codebase is fine without permission.
 - Only write/edit files after the user explicitly approves the proposed change.
 
+## META RULE 0 — Exception: Session File Operations
+The following operations are PRE-APPROVED and do NOT require user confirmation:
+- Writing/creating session log files (BT and AT sessions)
+- Creating new log entries
+- Updating existing session logs
+- Updating progress logs, checkins, micro-actions, tracking files
+- Creating session summaries
+- Any file operation under `breakthrough/sessions/` or `action/sessions/`
+
+This applies to all session-related data files only. Code changes, architecture files, and config still require explicit approval.
+
+## Mandatory Session Summaries
+A summary MUST be generated at the end of every BT (Breakthrough) and AT (Action) session — no exceptions.
+- Breakthrough sessions: full 16-section summary + MACHINE DATA JSON + all post-processing (progress log, micro-actions, daily actions, consolidation queue, scoreboard, auto-state)
+- Action sessions: full 14-section summary + MACHINE DATA JSON + all post-processing (evidence log, exposure tracker, for-breakthrough flags, scoreboard, auto-state)
+- Summary generation is automatic and does not require user confirmation
+- If a session ends via Ctrl+C, timeout, or any other exit path, the summary must still be generated
+
 ---
 
 ## What This Project Is

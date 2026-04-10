@@ -800,6 +800,62 @@ def speak(text):
 # AI Response (Claude or Ollama)
 # ---------------------------------------------------------------------------
 
+def _clean_model_text(text):
+    """Strip common markdown formatting from model output."""
+    text = text.replace("**", "").replace("*", "")
+    text = text.replace("##", "").replace("#", "")
+    text = text.replace("- ", "").replace("• ", "")
+    return text.strip()
+
+
+def _is_claude_rate_limited(stdout, stderr):
+    """Detect Claude usage/rate limit signals from CLI output."""
+    combined = f"{stdout or ''}\n{stderr or ''}".lower()
+    markers = (
+        "rate limit",
+        "usage limit",
+        "too many requests",
+        "ratelimit",
+        "quota exceeded",
+        "you've hit your limit",
+        "you have hit your limit",
+        "resets 3am",
+    )
+    return any(marker in combined for marker in markers)
+
+
+def _run_model_prompt(prompt, timeout=120):
+    """
+    Run prompt via Claude CLI, with Codex fallback on Claude rate limits.
+    Returns (response_text, provider, error_message).
+    """
+    result = subprocess.run(
+        ["claude", "-p", prompt],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    if _is_claude_rate_limited(result.stdout, result.stderr):
+        print("  Claude rate limit hit. Falling back to Codex...")
+        codex_result = subprocess.run(
+            ["codex", "exec", prompt],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        codex_text = (codex_result.stdout or "").strip()
+        if codex_text:
+            return _clean_model_text(codex_text), "codex", None
+        codex_err = (codex_result.stderr or "").strip()
+        return None, "codex", codex_err or "Codex returned empty response."
+
+    claude_text = (result.stdout or "").strip()
+    if claude_text:
+        return _clean_model_text(claude_text), "claude", None
+
+    err = (result.stderr or "").strip()
+    return None, "claude", err or "Claude returned empty response."
+
 def get_ai_response(system_prompt, conversation, user_message, model="claude"):
     print("  \033[33m⏳ Processing...\033[0m", flush=True)
 
@@ -818,18 +874,11 @@ def get_ai_response(system_prompt, conversation, user_message, model="claude"):
 
     try:
         if model == "claude":
-            result = subprocess.run(
-                ["claude", "-p", full_prompt],
-                capture_output=True, text=True, timeout=120
-            )
-            response = result.stdout.strip()
+            response, provider, err = _run_model_prompt(full_prompt, timeout=120)
             if not response:
-                if result.stderr:
-                    print(f"  Claude error: {result.stderr[:200]}")
+                if err:
+                    print(f"  {provider.capitalize()} error: {err[:200]}")
                 return "I'm here. What exposure are we working on today?"
-            response = response.replace("**", "").replace("*", "")
-            response = response.replace("##", "").replace("#", "")
-            response = response.replace("- ", "").replace("• ", "")
             return response
 
         elif model.startswith("ollama-"):
@@ -854,10 +903,7 @@ def get_ai_response(system_prompt, conversation, user_message, model="claude"):
                         response_text += chunk.get("response", "")
                 if not response_text.strip():
                     return "I'm here. What exposure are we working on today?"
-                response_text = response_text.replace("**", "").replace("*", "")
-                response_text = response_text.replace("##", "").replace("#", "")
-                response_text = response_text.replace("- ", "").replace("• ", "")
-                return response_text.strip()
+                return _clean_model_text(response_text)
             except requests.exceptions.ConnectionError:
                 print("\n  ERROR: Ollama not running at localhost:11434")
                 print("  Start Ollama with: ollama serve")
@@ -1006,21 +1052,17 @@ Then add a final section exactly like this:
 Be honest. If avoidance won, say so. Evidence over theory. Deposits over plans."""
 
         try:
-            result = subprocess.run(
-                ["claude", "-p", summary_prompt],
-                capture_output=True, text=True, timeout=120
-            )
-            summary = result.stdout.strip()
+            summary, _, err = _run_model_prompt(summary_prompt, timeout=120)
+            summary = summary or ""
             data = extract_machine_data(summary)
             if not data.get("summary_status"):
                 retry_prompt = summary_prompt + "\n\nYour previous response was missing or malformed in the MACHINE DATA JSON block. Regenerate the full summary and ensure the MACHINE DATA block is valid JSON."
-                retry = subprocess.run(
-                    ["claude", "-p", retry_prompt],
-                    capture_output=True, text=True, timeout=120
-                )
-                retry_summary = retry.stdout.strip()
+                retry_summary, _, _ = _run_model_prompt(retry_prompt, timeout=120)
+                retry_summary = retry_summary or ""
                 if extract_machine_data(retry_summary).get("summary_status"):
                     summary = retry_summary
+            if not summary and err:
+                raise RuntimeError(err)
         except Exception:
             summary = "(Summary generation failed — review transcript manually)"
 
@@ -1259,11 +1301,9 @@ def generate_weekly_review(client_name):
     print("  Generating weekly review...")
 
     try:
-        result = subprocess.run(
-            ["claude", "-p", review_prompt],
-            capture_output=True, text=True, timeout=180
-        )
-        review = result.stdout.strip()
+        review, _, err = _run_model_prompt(review_prompt, timeout=180)
+        if not review and err:
+            raise RuntimeError(err)
     except Exception as e:
         print(f"  Error generating review: {e}")
         return

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "current_week": "2026-W14",
+  "sessions": [
+    {
+      "date": "2026-04-09",
+      "type": "intro",
+      "duration_minutes": 15,
+      "notes": "Programme introduction, cyclic sighing taught, Day 1 log created"
+    },
+    {
+      "date": "2026-04-10",
+      "type": "E",
+      "week": "2026-W14",
+      "exposures": 0,
+      "avoidances": 0
+    },
+    {
+      "date": "2026-04-10",
+      "type": "E",
+      "week": "2026-W14",
+      "exposures": 0,
+      "avoidances": 0
+    },
+    {
+      "date": "2026-04-10",
+      "type": "E",
+      "week": "2026-W14",
+      "exposures": 0,
+      "avoidances": 0
+    }
+  ],
+  "recommended_next_type": "D",
+  "recommended_reason": "",
+  "current_exposure_level": 1,
+  "level_2_assigned": true,
+  "gym_streak": 0,
+  "cyclic_sighing_streak": 0,
+  "att_practice_days": 0,
+  "metrics": {
+    "avg_prediction_gap": null,
+    "exposures_this_week": 0,
+    "avoidances_this_week": 0,
+    "shame_spirals_this_week": 0
+  },
+  "summary_status": "fallback"
+}
